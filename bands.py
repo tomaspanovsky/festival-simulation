@@ -5,63 +5,37 @@ import operator
 import times
 from outputs.code import logs
 
-def choose_bands(budget, num, remaining_money = 0, bands = source.BANDS.copy()):
+def_time_converter = times.TimeConverter(None, None)
 
-    #Vybere kapely do programu jednoho dne podle budgetu
-    random.shuffle(bands)  # zamícháme pořadí
+def choose_bands(num, bands=None):
 
-    budget += remaining_money
-    deposit = budget / 4
-    chosen = []
-    total_price = 0
-    order_of_band = 0
+    if bands is None:
+        bands = source.BANDS.copy()
 
-    for band in bands[:]:
-        
-        if len(chosen) >= num:
-           
-            #seřazení kapel od nejméně známé po headlinera
-            chosen = sorted(chosen, key=operator.itemgetter("popularity"))
-            break
+    else:
+        bands = bands.copy()
 
-        if num - order_of_band != 1:
-            
-            if total_price + band["price"] <= budget and band["price"] <= budget - deposit:
-                chosen.append(band)
-                bands.remove(band)
-                total_price += band["price"]
-                order_of_band += 1
+    random.shuffle(bands)
 
-        else:
-            left = budget - total_price
-            possibilities = [k for k in bands if k["price"] <= left and k not in chosen]
+    chosen = bands[:num]
+    chosen = sorted(chosen, key=lambda b: b["popularity"])
 
-            headliner = possibilities[0]
-            for k in possibilities[1:]:
-                if k["price"] > headliner["price"]:
-                    headliner = k
+    remaining = [band for band in bands if band not in chosen]
 
-            chosen.append(headliner)
-            bands.remove(headliner)
-            total_price += headliner["price"]
+    return chosen, remaining
 
-    remaining_money = budget - total_price
-
-    return chosen, remaining_money, bands
-
-def create_lineup(num_days, budget_for_bands, num_of_bands):
+def create_lineup(num_days, num_of_bands):
     #funkce, která vytvoří program na všechny dny festivalu
 
-    budget_for_day = budget_for_bands / num_days
     num_of_bands 
     lineup = []
 
     for i in range(num_days):
 
         if i == 0:
-            bands, remaining_money, reduced_bands = choose_bands(budget_for_day, num_of_bands)
+            bands, reduced_bands = choose_bands(num_of_bands)
         else:
-            bands, remaining_money, reduced_bands = choose_bands(budget_for_day, num_of_bands, remaining_money, reduced_bands)
+            bands, reduced_bands = choose_bands(num_of_bands, reduced_bands)
         
         lineup.append(bands)
 
@@ -124,21 +98,23 @@ def merge_bands(lineup):
 
     return bands_list
 
-def create_schedule(line_up, festival):
-    headliner_time = festival.get_time("headliner_time")
-    band_time = festival.get_time("band_time")
-    signing_time = festival.get_time("signing_time")
-    first_show_starts = festival.get_time("first_show_starts")
-    last_show_ends = festival.get_time("last_show_ends")
-    start_time = festival.get_start_time()
-
+def create_schedule(line_up, time_settings, simulation_start_time):
+    headliner_time = time_settings["headliner_time"]
+    band_time = time_settings["band_time"]
+    signing_time = time_settings["signing_time"]
+    first_show_starts = def_time_converter.format_time_string_to_mins(time_settings["first_show_starts"])
+    last_show_ends = def_time_converter.format_time_string_to_mins(time_settings["last_show_ends"])
+    start_time = def_time_converter.format_time_string_to_mins(simulation_start_time)
+    
+    if last_show_ends <= 120 and last_show_ends < first_show_starts:
+        last_show_ends += 1440
+        
     time_to_play = last_show_ends - first_show_starts
     pause_time = time_to_play - (band_time * (len(line_up[0]) - 1) + headliner_time)
     pause_time /= len(line_up[0]) - 1
     rounded = (pause_time // 10) * 10
     remainder = pause_time - rounded
     pause_time = rounded
-    festival.set_pause_between_shows(pause_time)
     start_show = first_show_starts - start_time
     starting_index = start_show
     headliner_time += (len(line_up[0]) - 1) * remainder
@@ -182,15 +158,13 @@ def create_schedule(line_up, festival):
 
     return line_up
 
-def create_merch(festival):
+def create_merch(line_up, merch):
     """Čím slavnější kapela, tím víc si vozí merch -> nejméně známé kapely 1/3 možných položek merch,
     středně známé kapely 2/3 merch,
     a nejslavnější kapely všechny možné položky merch"""
 
-    line_up = festival.get_lineup()
-    merch = festival.get_merch()
-    bands_merch_type = merch["bands_merch"]
-    festival_merch = merch["festival_merch"]
+    bands_merch_type = merch[0]
+    festival_merch = merch[1]
     number_of_merch = len(bands_merch_type)
     number_of_merch_factor = number_of_merch // 3
     number_of_merch = [number_of_merch_factor, number_of_merch_factor * 2, number_of_merch]
@@ -215,47 +189,66 @@ def create_merch(festival):
 
     return merch
 
-def band_play(env, band, stage, festival, i):
-
+def band_play(env, band, lineup, stage, controller, i):
+    time_converter = controller.get_time_converter()
+    festival = controller.get_festival()
     start_show = band["start_playing_time"]
     end_show = band["end_playing_time"]
     duration = end_show - start_show
-    pause_time = festival.get_pause()
-    start_time = festival.get_start_time()
     num_bands = len(festival.get_lineup()[0])
+    last_band = None
+    first_tommorow_band_play = None
+    pause_time = None
+    next_day = None
     yield env.timeout(start_show - env.now)
+    
 
-    if len(stage) == 1:
-        stage = stage[0]
+    next, next_day = next_band(lineup, actual_band=band)
+    print(next, next_day)        
+    if next:
+        pause_time = next["start_playing_time"] - band["end_playing_time"]
+
+    else:
+        if next_day is not None:
+            first_tommorow_band_play = lineup[next_day][0]["start_playing_time"]
+            first_tommorow_band_play = time_converter.get_real_time(first_tommorow_band_play)
+
+    if not next and not first_tommorow_band_play:
+        last_band = True
     
     with stage.resource.request() as req:
         
             yield req
             festival.set_playing_band(band)
-            message = f"ČAS {times.get_real_time(env, start_time)}: Kapela {band['band_name']} právě začala hrát a bude hrát do {times.get_real_time(env, start_time, end_show)}."            
+            message = f"ČAS {time_converter.get_real_time()}: Kapela {band['band_name']} právě začala hrát a bude hrát do {time_converter.get_real_time(end_show)}."            
             print(message)
             logs.log_message(message)
 
             yield env.timeout(duration)
             
             if num_bands == i:
-
-                message = f"ČAS {times.get_real_time(env, start_time)}: Kapela {band['band_name']} právě dohrála. Další kapela hraje až zítra v {times.format_time_minutes_to_hours(festival.get_time("first_show_starts"))}."
+                
+                if last_band:
+                    message = f"ČAS {time_converter.get_real_time()}: Kapela {band['band_name']} právě dohrála, což byla poslední kapela na festivalu."
+                else:
+                    message = f"ČAS {time_converter.get_real_time()}: Kapela {band['band_name']} právě dohrála. Další kapela hraje až zítra v {first_tommorow_band_play}."
+                
                 print(message)
-                logs.log_message(message)            
-            else:
+                logs.log_message(message)  
 
-                message = f"ČAS {times.get_real_time(env, start_time)}: Kapela {band['band_name']} právě dohrála a náseduje pauza, další kapela hraje za {int(pause_time)} minut."
+            else:
+                message = f"ČAS {time_converter.get_real_time()}: Kapela {band['band_name']} právě dohrála a náseduje pauza, další kapela hraje za {pause_time} minut."
                 print(message)
                 logs.log_message(message)
 
             festival.cancel_playing_band()
 
-def band_go_to_signing_session(env, band, signing_stall, festival, signing_order):
+def band_go_to_signing_session(env, band, signing_stall, controller, signing_order):
+    time_converter = controller.get_time_converter()
+    festival = controller.get_festival()
     start_signign = band["start_signing_session"]
     end_signing = band["end_signing_session"]
-    signign_time = int(festival.get_time("signing_time"))
-    start_time = festival.get_start_time()
+    signign_time = end_signing - start_signign
 
     if band == signing_order[0]:
         signing_stall.resource[3] = band
@@ -268,13 +261,13 @@ def band_go_to_signing_session(env, band, signing_stall, festival, signing_order
     
         festival.set_signing_band(band)
 
-        message = f"ČAS {times.get_real_time(env, start_time)}: Právě začala autogramiáda kapely {band['band_name']} a bude trvat do {times.get_real_time(env, start_time, end_signing)}."
+        message = f"ČAS {time_converter.get_real_time()}: Právě začala autogramiáda kapely {band['band_name']} a bude trvat do {time_converter.get_real_time(end_signing)}."
         print(message)
         logs.log_message(message)
 
         yield env.timeout(signign_time)
 
-        message = f"ČAS {times.get_real_time(env, start_time)}: Skončila autogramiáda kapely {band['band_name']}. "
+        message = f"ČAS {time_converter.get_real_time()}: Skončila autogramiáda kapely {band['band_name']}. "
         festival.cancel_signing_band()
 
         print(message)
@@ -306,13 +299,62 @@ def get_order_of_signing_sessions(festival):
 
     return all_bands
 
-def set_bands(env, lineup, stage, signign_stall, festival):
+def set_bands(env, lineup, stage, signign_stall, controller):
 
+    festival = controller.get_festival()
     signing_order = get_order_of_signing_sessions(festival)
+    festival.set_signing_order(signing_order)
 
     for day in lineup:
         i = 0
         for band in day:
             i += 1
-            env.process(band_play(env, band, stage, festival, i))
-            env.process(band_go_to_signing_session(env, band, signign_stall, festival, signing_order))
+            env.process(band_play(env, band, lineup, stage, controller, i))
+            if signign_stall:
+                env.process(band_go_to_signing_session(env, band, signign_stall, controller, signing_order))
+
+def convert_lineup_to_mins(lineup, start_time):
+    day_index = -1
+
+    for day in lineup:
+        day_index += 1
+
+        for band in day:
+            band["start_playing_time"] = def_time_converter.format_time_string_to_mins(band["start_playing_time"]) + (day_index * 1440) - start_time
+            band["end_playing_time"] = def_time_converter.format_time_string_to_mins(band["end_playing_time"]) + (day_index * 1440) - start_time
+            band["start_signing_session"] = def_time_converter.format_time_string_to_mins(band["start_signing_session"]) + (day_index * 1440) - start_time
+            band["end_signing_session"] = def_time_converter.format_time_string_to_mins(band["end_signing_session"]) + (day_index * 1440) - start_time
+
+            if band["end_playing_time"] < band["start_playing_time"]:
+                band["end_playing_time"] += 1440
+
+    return lineup
+
+def next_band(lineup, actual_band=None, env=None, signing=None):
+    
+    j = -1
+
+    if signing and env:
+        now = env.now
+
+        for band in lineup:
+            if band["start_signing_session"] > now:
+                return band
+
+    for day in lineup:
+        j += 1
+
+        if actual_band:
+            if actual_band in day:
+                for index, band in enumerate(day):
+                    if band == actual_band:
+                        return (day[index + 1] if index + 1 < len(day) else None), (j+1 if j+1 < len(lineup) else None)
+                    
+        if env:
+            now = env.now
+
+            for band in day:
+                if band["start_playing_time"] > now:
+                    return band
+            
+    return None

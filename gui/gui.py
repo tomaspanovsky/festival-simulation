@@ -1,11 +1,13 @@
 import tkinter as tk
+from tkinter import ttk
+from tkinter import colorchooser
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image, ImageOps, ImageTk
 import textwrap
 import copy
 import simpy
-from . import saving
-from . import loading 
+from gui import saving
+from gui import loading 
 import source
 import visitors
 import bands
@@ -20,6 +22,9 @@ import times
 import time
 import simulation_controller
 import threading
+import os
+import gui.validation as validation
+import BFS
 from outputs.code import logs
 
 current_zone = None         
@@ -38,6 +43,10 @@ is_dragging_object = False
 is_dragging_zone = False
 connect_start_zone = None
 object_id = 0
+default_loaded = False
+actual_day = False
+actual_time = False
+time_converter = False
 
 zones_data = {
     "Spawn zóna": {},
@@ -51,54 +60,65 @@ zones_data = {
 zones_data_default = copy.deepcopy(zones_data)
 
 def run_app():
-    settings = {}
     controller = None
-    default_loaded = False
     loaded = False
     value = 1
-    
+    env = None
     merch_data = None
     
     def start():
-        nonlocal controller, value, loaded
-        global current_mode
+        nonlocal controller, value, loaded, env
+        global current_mode, selected_object, zones_data, simulation_start_time, festival_env, actual_day, actual_time, time_converter
 
         if not loaded:
             show_message("Musí být načten nebo vytvořen a uložen festivalový areál!")
             return
         
-        
-        merch = get_merch(bands_entries)
-        capacities = get_capacities()
-        prices = get_prices()
-        festival_times_data = get_times()
+        saving.save(zones_data, auto=True)
 
-        settings["num_visitors"] = int(entry_visitors.get())
-        settings["num_days"] = int(entry_days.get())
-        settings["budget_for_bands"] = int(entry_budget.get())
-        settings["num_bands"] = int(entry_num_bands.get())
-        settings["simulation_start_time"] = simulation_start_time.get()
-        settings["prices"] = prices
-        settings["merch"] = merch
-        settings["capacities"] = capacities
-        
-        editor_buttons_frame.pack_forget()
-        frame_left.pack_forget()
-        frame_right.pack_forget()
-        simulation_buttons_frame.pack()
-        left_simulation_container.pack(side="left", fill="y")
-        create_zone_stats_labels()
+        possible_actions_all_on, possible_actions_all_off, possible_actions_inside_off_outside_on, possible_actions_inside_on_outside_off, zones = get_possible_actions()
 
-        num_visitors = settings["num_visitors"]
-        num_days = settings["num_days"]
-        budget_for_bands = settings["budget_for_bands"]
-        num_bands = settings["num_bands"]
-        prices = settings["prices"]
-        festival_times = {"simulation_start_time": times.format_time_string_to_mins(settings["simulation_start_time"]), "headliner_time" : int(festival_times_data["headliner_time"]), "band_time" : int(festival_times_data["band_time"]), "first_show_starts" : times.format_time_string_to_mins(festival_times_data["first_show_starts"]), "last_show_ends" : times.format_time_string_to_mins(festival_times_data["last_show_ends"]), "signing_time" : int((festival_times_data["signing_time"]))}
+        possible_actions= {
+            "all_on": possible_actions_all_on,
+            "all_off": possible_actions_all_off,
+            "inside_off_outside_on": possible_actions_inside_off_outside_on,
+            "inside_on_outside_off": possible_actions_inside_on_outside_off
+        }
+
+        errors = check_actions_and_connections(possible_actions_all_on, zones)
+
+        if errors:
+            show_message(errors)
+            return
+        
+        current_mode = "inspect"
+
+        if selected_object:
+            unhighlight_object(selected_object)
+            selected_object = None
+        
+        stall_log_box.configure(state="normal")
+        stall_log_box.delete("1.0", "end")
+        stall_log_box.configure(state="disabled")
+
+        messages_log_box.configure(state="normal")
+        messages_log_box.delete("1.0", "end")
+        messages_log_box.configure(state="disabled")
+
+        capacities = loading.load_settings(source.file_path_capacities)
+        prices = loading.load_settings(source.file_path_fest_prices)
+        merch_settings = loading.load_settings(source.file_path_merch)
+        main_settings = loading.load_settings(source.file_path_main_settings)
+        stalls_opening_hours = loading.load_settings(source.file_path_stalls_opening_hours)
+
+        num_visitors = main_settings["num_visitors"]
+        num_days = main_settings["num_days"]
 
         festival_env = simpy.Environment()
-
-        stalls = resources.create_resources(festival_env, capacities, num_visitors, festival_times["simulation_start_time"])
+        time_converter = times.TimeConverter(main_settings["simulation_start_time"], festival_env)
+        time_converter.set_start_time_to_minutes()
+        simulation_start_time = time_converter.get_start_time()
+        stalls, meadows, stalls_opening_hours = resources.create_resources(festival_env, capacities, num_visitors, time_converter, stalls_opening_hours, num_days)
         logs.add_stalls_to_logs(stalls)
 
         food_stalls_names = resources.find_all_type_stall_at_festival(stalls, "foods")
@@ -106,46 +126,164 @@ def run_app():
         available_foods = foods.find_all_foods_at_festival(food_stalls_names)
         available_soft_drinks, available_alcohol_drinks = drinks.find_all_drinks_at_festival(drink_stalls_names)
 
-        people, groups_of_visitors = visitors.create_visitors(num_visitors, festival_env, available_foods, available_soft_drinks, available_alcohol_drinks, prices["on_site_price"], prices["pre_sale_price"], prices["camping_area_price"])
-        lineup = bands.create_lineup(num_days, budget_for_bands, num_bands)
-        people = bands.add_favorite_bands_to_visitor(people, lineup)
-        festival = fest.Festival(festival_env, people, groups_of_visitors, num_days, lineup, stalls, prices, festival_times, random.choice(list(source.Weather)), merch)
-        lineup = bands.create_schedule(lineup, festival)
-        merch = bands.create_merch(festival)
-        festival.set_merch(merch)
+        if not available_soft_drinks:
+            show_message("Na festivalu musí být alespoň jeden stánek prodávající nealkoholické nápoje")
+            return
+        
+        cap_tents = 0
 
-        stage = resources.find_stalls_in_zone(festival_env, festival, "stage")
-        signing_stall = resources.find_stalls_in_zone(festival_env, festival, "signing_stall")
-        bands.set_bands(festival_env, lineup, stage, signing_stall[0], festival)
+        if "energy" in possible_actions_all_on:       
+            cap_tents = meadows * capacities["meadow_for_living"]
+
+        people, groups_of_visitors = visitors.create_visitors(num_visitors, festival_env, available_foods, available_soft_drinks, available_alcohol_drinks, prices["on_site_price"], prices["pre_sale_price"], prices["camping_area_price"], cap_tents)
+        lineup = loading.load_settings(source.file_path_lineup)
+        lineup = bands.convert_lineup_to_mins(lineup, simulation_start_time)
+        people = bands.add_favorite_bands_to_visitor(people, lineup)
+        festival = fest.Festival(festival_env, people, groups_of_visitors, num_days, lineup, stalls, prices, possible_actions, stalls_opening_hours)
+        festival_env.process(festival.watch_possible_actions())
+        
+        if "want_merch" in possible_actions_all_on:
+            merch = bands.create_merch(lineup, merch_settings)
+            festival.set_merch(merch)
+
+        stage = resources.find_stall_with_shortest_queue_in_zone(festival_env, festival, "stage")
+
+        controller = simulation_controller.SimulationController(festival_env, festival, time_converter)
+
+        resources.set_stalls_schedules(stalls, controller, canvas, GRAY_OBJECT_IMAGES, OBJECT_IMAGES)
+
+        if "meet_band" in possible_actions_all_on:
+            signing_stall = resources.find_stall_with_shortest_queue_in_zone(festival_env, festival, "signing_stall")
+            bands.set_bands(festival_env, lineup, stage, signing_stall, controller)
+        else:
+            bands.set_bands(festival_env, lineup, stage, None, controller)
+
+        festival_env.process(simulation.spawn_groups(festival_env, groups_of_visitors, controller))
+
+
+        editor_buttons_frame.pack_forget()
+        frame_left.pack_forget()
+        frame_right.pack_forget()
+        title.pack_forget()
+        title_simulation_mode.pack(pady=10, padx=10)
+        simulation_buttons_frame.pack()
+        left_simulation_container.pack(side="left", fill="y")
+        create_zone_stats_labels()
+        update_day_time_labels(1, main_settings["simulation_start_time"])
 
 
         bands.print_lineup(lineup)
         visitors.print_visitors(people)
 
-        controller = simulation_controller.SimulationController(festival_env, festival)
-
-        festival_env.process(simulation.spawn_groups(festival_env, groups_of_visitors, festival))
-
-        message = f"ČAS {times.get_real_time(festival_env, festival.get_start_time())}: START SIMULACE"
+        
+        message = f"ČAS {time_converter.get_real_time()}: START SIMULACE"
         print(message)
         logs.log_message(message)
-        message = f"ČAS {times.get_real_time(festival_env, festival.get_start_time())}: 1. DEN"
+
+        message = f"ČAS {time_converter.get_real_time()}: 1. DEN"
         print(message)
         logs.log_message("1. DEN:")
 
-        current_mode = "inspect"
+    def get_possible_actions():
+        actions_by_locations = loading.load_festival_settings_data("ACTIONS_BY_LOCATIONS")
+        unpossible_off = ["hunger", "thirst", "cup_return", "want_merch", "phone_dead", "phone_ready", "smoking_water_pipe", "low_cigars", "attraction_desire"]
+        possible_everytime = ["departure", "smoking", "nothing", "eat", "drink", "wc", "low_money", "bracelet_exchange", "sit_down", "dirty_hands", "brushing_teeth", "meet_band", "band_playing", "living", "energy", "hygiene"]
+        possible_actions_all_on = []
+        possible_actions_all_off = []
+        possible_actions_inside_on = []
+        possible_actions_inside_off = []
+        possible_actions_outside_on = []
+        possible_actions_outside_off = []
 
-        SIMULATION_MODE = "debug"
-        SIMULATION_MODE = "hardcore"
+        zones = []
 
-        if SIMULATION_MODE == "debug":
+        for zone, actions in actions_by_locations.items():
+            zones.append(zone)
+            for action in actions:
+                
+                if zone == "FESTIVAL_AREA":
 
-            print("Simulace jede v debug režimu")
-            festival_env.run(until=num_days * 1440)
-            print("SIMULACE PROBĚHLA ÚSPĚŠNĚ")
-        else:
-            print("Simulace jede v krokovacím režimu")   
+                    if action in unpossible_off:
 
+                        if action not in possible_actions_inside_on:
+                            possible_actions_inside_on.append(action)
+                    
+                    else:
+                        if action not in possible_actions_inside_on:
+                            possible_actions_inside_on.append(action)
+
+                        if action not in possible_actions_inside_off:
+                            possible_actions_inside_off.append(action)
+
+                else:
+                    
+                    if action in unpossible_off:
+
+                        if action not in possible_actions_outside_on:
+                            possible_actions_outside_on.append(action)
+
+                    else:
+
+                        if action not in possible_actions_outside_on:
+                            possible_actions_outside_on.append(action)
+
+                        if action not in possible_actions_outside_off:
+                            possible_actions_outside_off.append(action)
+
+                if action in possible_everytime and action not in possible_actions_all_off:
+                    possible_actions_all_off.append(action)
+
+                if action not in possible_actions_all_on:
+                    possible_actions_all_on.append(action)
+
+        possible_actions_inside_off_outside_on = list(set(possible_actions_inside_off) | set(possible_actions_outside_on))
+        possible_actions_inside_on_outside_off = list(set(possible_actions_inside_on) | set(possible_actions_outside_off))
+
+        return possible_actions_all_on, possible_actions_all_off, possible_actions_inside_off_outside_on, possible_actions_inside_on_outside_off, zones
+    
+
+    def check_actions_and_connections(possible_actions, zones):
+        connections = loading.load_festival_settings_data("ACTIONS_MOVING")
+        zones = list(connections.keys())
+        errors = []
+
+        start_zone = zones[0]
+
+        for target_zone in zones:
+            if target_zone == start_zone:
+                continue
+
+            result = BFS.BFS(start_zone, target_zone)
+
+            if result is None:
+                errors.append(f"Zóna {source.Locations[start_zone].value} není dosažitelná z {source.Locations[target_zone].value}")
+
+        if errors:
+            errors.append("Zóny je nutné propojit tak, aby z každé zóny bylo možné se dostat do jiné zóny.")
+
+        if not "SPAWN_ZONE" in zones:
+            errors.append("Na festivalu musí být spawn zóna = místo, kde se objeví návštěvníci.") 
+
+        if not "hunger" in possible_actions:
+            errors.append("Na festivalu musí být alespoň jeden stánek s jídlem")
+           
+        if not "thirst" in possible_actions:
+            errors.append("Na festivalu musí být alespoň jeden stánek prodávající nealkoholické nápoje")
+        
+        if not "band_playing" in possible_actions:
+            errors.append("Ve festivalovém areálu musí být umístěno pódium")
+
+        if not "bracelet_exchange" in possible_actions:
+            errors.append("Ve vstupní zóně musí být umístěna alespoň jedna pokladna")
+
+        if not "wc" in possible_actions:
+            errors.append("Na festivalu musí být umístěny alespoň jedny toitoi.")
+        
+        if not "low_money" in possible_actions:
+            errors.append("Na festivalu musí být umístěn alespoň jeden bankomat")
+
+        return errors
+    
     def move_forward_by_time():
         nonlocal value
 
@@ -153,12 +291,25 @@ def run_app():
             print("Nelze krokovat během automatického režimu.")
             return
 
-        controller.move_forward_by_time(value)
+        done = controller.move_forward_by_time(value)
         move_forward_actions()
+
+        if done:
+            current_dir = os.path.join(os.getcwd(), "outputs")
+            logs.log_message("SIMULACE UKONČENA")
+            logs.save_logs()
+            show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
 
     def start_smooth_simulation():
         smooth_simulation_start_button.pack_forget()
         smooth_simulation_stop_button.pack(anchor="center", pady=10)
+
+        minus_button.configure(state="disabled")
+        plus_button.configure(state="disabled")
+        move_forward_by_time_button.configure(state="disabled")
+        automatic_simulation_start_button.configure(state="disabled")
+        jump_entry.configure(state=("disabled"))       
+        
         controller.start_smooth_simulation()
         threading.Thread(target=smooth_loop, daemon=True).start()
 
@@ -166,20 +317,46 @@ def run_app():
         smooth_simulation_start_button.pack(anchor="center", pady=10)
         smooth_simulation_stop_button.pack_forget()
         controller.stop_smooth_simulation()
-    
+
+        minus_button.configure(state="normal")
+        plus_button.configure(state="normal")
+        move_forward_by_time_button.configure(state="normal")
+        automatic_simulation_start_button.configure(state="normal")
+        jump_entry.configure(state=("normal")) 
+        
     def smooth_loop():
 
         while controller.get_auto_mode_state():
-            controller.move_forward_by_time(1)
-
+            done = controller.move_forward_by_time(1)
             root.after(0, lambda: move_forward_actions())
+
+            if done:
+                logs.log_message("SIMULACE UKONČENA")
+                logs.save_logs()
+                current_dir = os.path.join(os.getcwd(), "outputs")
+                show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
+            
             time.sleep(1)
             
+    def automatic_simulation():
+        env = controller.get_env()
+        num_days = controller.get_festival().get_num_days()
+        env.run(until=num_days * 1440)
+
+        logs.log_message("SIMULACE UKONČENA")
+        logs.save_logs()
+        current_dir = os.path.join(os.getcwd(), "outputs")
+        show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
 
     def move_forward_actions():
+        global time_converter
+        festival = controller.get_festival()
+        day = festival.get_actual_day()
+        
         new_logs = get_new_logs()
-        get_actual_state(controller)
+        controller.get_actual_state()
         view_changes(controller)
+        update_day_time_labels(day, time_converter.get_real_time())
         view_logs(new_logs)
 
     def exit_app():
@@ -188,24 +365,35 @@ def run_app():
         root.destroy()
     
     def stop_simulation():
-        global current_mode
+        global current_mode, selected_object
 
         controller.stop_smooth_simulation()
         festival = controller.get_festival()
-        current_mode = "edit"
-
+        
         delete_zone_stats_labels()
         stall_log_box.delete("0.0", "end")
         messages_log_box.delete("0.0", "end")
         
         simulation_buttons_frame.pack_forget()
         left_simulation_container.pack_forget()
+        title_simulation_mode.pack_forget()
+
+        title.pack(pady=10, padx=10)
         editor_buttons_frame.pack(pady=20)
         frame_left.pack(side="left", fill="y", padx=0, pady=0)
         frame_right.pack(side="left", fill="y", padx=0, pady=0)
 
         logs.log_message("SIMULACE UKONČENA")
-        logs.save_logs(festival)
+        logs.save_logs()
+
+        current_mode = "add"
+        select_mode("add")
+        if selected_object:
+            unhighlight_object(selected_object)
+            selected_object = None
+        
+        uncolor_objects(OBJECT_IMAGES)
+
 
     def get_new_logs():
         all_logs = logs.all_messages
@@ -221,108 +409,208 @@ def run_app():
         MAX_LOG_LINES = 100
         WRAP_WIDTH = 55 
 
+        messages_log_box.configure(state="normal")
+
         if ": " in log:
             prefix, rest = log.split(": ", 1)
             prefix = prefix + ": "
+            prefix = f"{prefix:<9}"
+
         else:
             prefix = ""
             rest = log
 
-        # odsazení pro další řádky
-        indent = " " * (len(prefix) + 8)
+        indent = " " * len(prefix)
 
-        # ruční zalomení textu
-        wrapped = textwrap.fill(
-            rest,
-            width=WRAP_WIDTH,
-            initial_indent=prefix,
-            subsequent_indent=indent,
-            break_long_words=False,
-            break_on_hyphens=False
-        )
+        if prefix:
+            messages_log_box.insert("end", prefix, "bold")
+            messages_log_box.insert("end", rest + "\n\n")
+        else:
+            messages_log_box.insert("end", prefix + "\n\n")
 
-        # vložení do textboxu
-        messages_log_box.configure(state="normal")
-        messages_log_box.insert("end", wrapped + "\n")
         messages_log_box.see("end")
 
-        # limit počtu řádků
-        lines = int(messages_log_box.index("end-1c").split(".")[0])
-        if lines > MAX_LOG_LINES:
-            messages_log_box.delete("1.0", f"{lines - MAX_LOG_LINES}.0")
+        total_lines = int(messages_log_box.index("end-1c").split(".")[0])
+        if total_lines > MAX_LOG_LINES:
+            messages_log_box.delete("1.0", f"{total_lines - MAX_LOG_LINES}.0")
 
         messages_log_box.configure(state="disabled")
 
-    def get_actual_state(controller):
-        festival = controller.get_festival()
-        stalls = festival.get_stalls()
-        simulation_state = controller.get_simulation_state()
-        num_people_in_zones = festival.get_num_people_in_zones()
-
-        simulation_state["time"] = controller.get_actual_time()
-
-        for zone in num_people_in_zones:
-            simulation_state["zones"][zone]["num_people_in_zone"] = num_people_in_zones[zone]
-
-        for zone, zone_stalls in stalls.items():
-            for stall in zone_stalls:
-
-                stall_name = stall.get_name()
-                stall_id = stall.get_id()
-
-                stall_list = simulation_state["zones"][zone]["stalls"][stall_name]
-
-                for stall_data in stall_list:
-                    if stall_data["id"] == stall_id:
-
-                        if stall_name == "standing_at_stage":
-                            resource = stall.get_resource()
-
-                            stall_data["num_people_on_show"] = stall.get_num_using()
-                            stall_data["num_people_in_first_lines"] = stall.get_num_using("first_lines")
-                            stall_data["num_people_in_the_middle"] = stall.get_num_using("middle")
-                            stall_data["num_people_in_back"] = stall.get_num_using("back")
-
-                        elif stall_name == "meadow_for_living":
-                            stall_data["num_tents"] = stall.get_num_tents()
-                            stall_data["num_people_in_tents"] = stall.get_num_using()
-
-                        else:
-                            stall_data["num_people_served"] = stall.get_num_using()
-                            stall_data["num_people_in_queue"] = stall.get_num_in_queue()
-                            break 
 
     def open_editor():
-        nonlocal default_loaded
+        global default_loaded
+
+        if not os.path.exists(source.file_path_lineup):
+            show_message("Nebyl načten, vytvořen ani vygenerován žádný lineup")
 
         main_frame.pack_forget()
+        bands_settings_frame.pack_forget()
+        bands_generate_settings_frame.pack_forget()
+        lineup_frame.pack_forget()
+
+        delete_zone_stats_labels()
+        stall_log_box.delete("0.0", "end")
+        messages_log_box.delete("0.0", "end")
+    
         editor_frame.pack(fill="both", expand=True)
+        title_frame.pack(side="top", pady="10")
+        title.pack(pady=10, padx=10)
+        content_frame.pack(fill="both", padx=50, pady=10)
+        frame_left.pack(side="left", fill="y")
+        frame_right.pack(side="left", fill="y")
+        canvas.pack(side="right", fill="both", expand=True)
+        editor_buttons_frame.pack(pady=20)
 
         if not default_loaded:
             load_default()
             default_loaded = True
+            
         
     def open_stalls_settings():
         main_frame.pack_forget()
         background_frame.pack(fill="both", expand=True)
         stall_settings_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-    def open_times_settings():
+        capacities = loading.load_settings(source.file_path_capacities)
+
+        for key, entry in cap_left_entries.items():
+            entry_widget = entry[0]
+            entry_widget.delete(0, "end")
+            entry_widget.insert(0, capacities.get(key, entry[0]))
+
+        for key, entry in cap_right_entries.items():
+            entry_widget = entry[0]
+            entry_widget.delete(0, "end")
+            entry_widget.insert(0, capacities.get(key, entry[0]))
+
+    def open_bands_generate_settings():
         main_frame.pack_forget()
-        background_frame.pack(fill="both", expand=True)
-        times_settings_frame.place(relx=0.5, rely=0.5, anchor="center")
+        bands_settings_frame.pack_forget()
+        bands_generate_settings_frame.pack(fill="both", expand=True)
+
+        times_data = loading.load_settings(source.file_path_time_settings)
+
+        for key, entry in festival_times.items():
+            entry_widget = entry[0]
+            entry_widget.delete(0, "end")
+            entry_widget.insert(0, times_data.get(key, entry[0]))
 
     def open_prices_settings():
         main_frame.pack_forget()
         background_frame.pack(fill="both", expand=True)
         prices_settings_frame.place(relx=0.5, rely=0.5, anchor="center")
 
+        prices = loading.load_settings(source.file_path_fest_prices)
+
+        for key, entry in price_entries.items():
+            entry_widget = entry[0]
+            entry_widget.delete(0, "end")
+            entry_widget.insert(0, prices.get(key, entry[0]))
+
     def open_merch_settings():
         nonlocal merch_data
         main_frame.pack_forget()
         background_frame.pack(fill="both", expand=True)
         merch_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        bands_merch, festival_merch = loading.load_settings(source.file_path_merch)
+
+        for item, entries in bands_entries.items():
+            price_entry = entries["price"]
+            quantity_entry = entries["quantity"]
+
+            price_entry.delete(0, "end")
+            quantity_entry.delete(0, "end")
+
+            price_entry.insert(0, str(bands_merch[item]["price"]))
+            quantity_entry.insert(0, str(bands_merch[item]["quantity"]))
+
+        for item, entries in festival_entries.items():
+            price_entry = entries["price"]
+            quantity_entry = entries["quantity"]
+
+            price_entry.delete(0, "end")
+            quantity_entry.delete(0, "end")
+
+            price_entry.insert(0, str(festival_merch[item]["price"]))
+            quantity_entry.insert(0, str(festival_merch[item]["quantity"]))
+
+    def open_highligh_settings():
+        main_frame.pack_forget()
+        background_frame.pack(fill="both", expand=True)
+        highlighs_settings_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        data = loading.load_settings(source.file_path_highlighs)
+        entry_stalls_low.delete(0, tk.END)
+        entry_stalls_low.insert(0, data["stalls"]["borders"]["low"])
+
+        entry_stalls_medium.delete(0, tk.END)
+        entry_stalls_medium.insert(0, data["stalls"]["borders"]["medium"])
+
+        entry_stalls_high.delete(0, tk.END)
+        entry_stalls_high.insert(0, data["stalls"]["borders"]["high"])
+
+        entry_stall_is_used["color"] = data["stalls"]["colors"]["used"]
+        color_stall_is_used_frame.children["!label"].config(bg=data["stalls"]["colors"]["used"])
+
+        entry_color_low["color"] = data["stalls"]["colors"]["low"]
+        color_low_frame.children["!label"].config(bg=data["stalls"]["colors"]["low"])
+
+        entry_color_medium["color"] = data["stalls"]["colors"]["medium"]
+        color_medium_frame.children["!label"].config(bg=data["stalls"]["colors"]["medium"])
+
+        entry_color_high["color"] = data["stalls"]["colors"]["high"]
+        color_high_frame.children["!label"].config(bg=data["stalls"]["colors"]["high"])
+
+
+        entry_stage_low.delete(0, tk.END)
+        entry_stage_low.insert(0, data["stage"]["borders"]["low"])
+
+        entry_stage_medium.delete(0, tk.END)
+        entry_stage_medium.insert(0, data["stage"]["borders"]["medium"])
+
+        entry_stage_high.delete(0, tk.END)
+        entry_stage_high.insert(0, data["stage"]["borders"]["high"])
+
+        entry_stage_color_low["color"] = data["stage"]["colors"]["low"]
+        stage_color_low_frame.children["!label"].config(bg=data["stage"]["colors"]["low"])
+
+        entry_stage_color_medium["color"] = data["stage"]["colors"]["medium"]
+        stage_color_medium_frame.children["!label"].config(bg=data["stage"]["colors"]["medium"])
+
+        entry_stage_color_high["color"] = data["stage"]["colors"]["high"]
+        stage_color_high_frame.children["!label"].config(bg=data["stage"]["colors"]["high"])
+
+    def open_opening_stalls_settings():
+        main_frame.pack_forget()
+        background_frame.pack(fill="both", expand=True)
+        stalls_opening_hours_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        opening_settings = loading.load_settings(source.file_path_stalls_opening_hours)
+
+        entry_outside_open.delete(0, tk.END)
+        entry_outside_open.insert(0, opening_settings["outside_festival_area"]["open"])
+
+        entry_outside_close.delete(0, tk.END)
+        entry_outside_close.insert(0, opening_settings["outside_festival_area"]["close"])
+
+        entry_inside_open.delete(0, tk.END)
+        entry_inside_open.insert(0, opening_settings["inside_festival_area"]["open"])
+
+        entry_inside_close.delete(0, tk.END)
+        entry_inside_close.insert(0, opening_settings["inside_festival_area"]["close"])
+
+    def open_band_settings():
+        errors = save_main_settings()
         
+        if errors:
+            show_message(errors)
+            return
+    
+        main_frame.pack_forget()
+        main_frame_middle.pack_forget()
+        bands_settings_frame.pack(fill="both", expand=True)
+
     def open_settings():
         main_frame_middle.pack(anchor="center", expand=True)
         settings_open_button.pack_forget()
@@ -332,70 +620,252 @@ def run_app():
         main_frame_middle.pack_forget()
         settings_open_button.pack(side="left", padx=10, pady=10)
         settings_hide_button.pack_forget()
+        save_main_settings()
+
+    def load_lineup():
+        lineup = loading.load_settings_dialog()
+        main_settings = loading.load_settings(source.file_path_main_settings)
+
+        if lineup:
+            
+            errors = validation.validate_lineup_structure(lineup)
+
+            if not errors:
+
+                if len(lineup) == main_settings["num_days"]:
+                    saving.save_data(lineup, source.file_path_lineup)
+                    continue_after_loading_lineup_button.configure(state="normal")
+                    show_message("Lineup úspěšně načten, můžete pokračovat.")
+
+                else:
+                    show_message("Lineup, který chcete načíst není na nastavený počet dní.")
+                    return
+                
+            else:
+                show_message(errors)
+                return
+            
+        else:
+            show_message("Načtení lineupu se nezdařilo")
+
+    def open_create_lineup_settings():
+        bands_settings_frame.pack_forget()
+        num_days = loading.load_settings(source.file_path_main_settings)["num_days"]
+        create_lineup_settings(num_days, lineup_frame)
+
+    def generate_lineup():
+        times_settings = loading.load_settings(source.file_path_time_settings)
+        main_settings = loading.load_settings(source.file_path_main_settings)
+        num_days = main_settings["num_days"]
+        num_bands = times_settings["num_bands"]
+        simulation_start_time = main_settings["simulation_start_time"]
+        lineup = bands.create_lineup(num_days, num_bands)
+        lineup = bands.create_schedule(lineup, times_settings, simulation_start_time)
+
+        generate_time_convertor = times.TimeConverter(simulation_start_time, None)
+        generate_time_convertor.set_start_time_to_minutes()
+        
+        for day in lineup:
+            for band in day:
+                band["start_playing_time"] = generate_time_convertor.get_real_time(band["start_playing_time"])
+                band["end_playing_time"] = generate_time_convertor.get_real_time(band["end_playing_time"])
+                band["start_signing_session"] = generate_time_convertor.get_real_time(band["start_signing_session"])
+                band["end_signing_session"] = generate_time_convertor.get_real_time(band["end_signing_session"])
+
+        saving.save_data(lineup, source.file_path_lineup)
+        continue_button_generate.configure(state="normal")
+
+        show_message("Lineup byl úspěšně vygenerován, nyní můžete pokračovat.")
+        return lineup
     
+    def save_main_settings():
+        errors = []
+
+        num_visitors = validation.validate_int_range("počet návštěvníků", entry_visitors.get(), 1, 50000)
+        num_days = validation.validate_int_range("počet dní", entry_days.get(), 1, 5)
+        simulation_start_time = validation.validate_time_string("čas zahájení simulace", entry_simulation_start_time.get(), "06:00", "12:00")
+    
+        main_settings = {
+            "num_visitors": num_visitors,
+            "num_days": num_days,
+            "simulation_start_time": simulation_start_time
+            }
+                
+        for name, value in main_settings.items():
+            if isinstance(value, str) and name != "simulation_start_time":
+                errors.append(value)
+
+            elif name == "simulation_start_time" and "Hodnota" in value:
+                errors.append(value)
+
+        if not errors:
+            saving.save_data(main_settings, source.file_path_main_settings)
+            return False
+        
+        else:
+            return errors
+        
     def go_back():
         if stall_settings_frame.winfo_ismapped():
             stall_settings_frame.place_forget()
-  
+            background_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
+
         elif prices_settings_frame.winfo_ismapped():
             prices_settings_frame.place_forget()
-
-        elif times_settings_frame.winfo_ismapped():
-            times_settings_frame.place_forget()
+            background_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
         
         elif merch_frame.winfo_ismapped():
             merch_frame.place_forget()
+            background_frame.pack_forget() 
+            main_frame.pack(fill="both", expand=True)
+
+        elif highlighs_settings_frame.winfo_ismapped():
+            highlighs_settings_frame.place_forget()
+            background_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
+
+        elif stalls_opening_hours_frame.winfo_ismapped():
+            stalls_opening_hours_frame.place_forget()
+            background_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
 
         elif editor_frame.winfo_ismapped():
             editor_frame.pack_forget()
+            background_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
 
-        background_frame.pack_forget()
+        elif bands_settings_frame.winfo_ismapped():
+            bands_settings_frame.pack_forget()
+            main_frame.pack(fill="both", expand=True)
+
+        elif bands_generate_settings_frame.winfo_ismapped():
+            bands_generate_settings_frame.pack_forget()
+            bands_settings_frame.pack(fill="both", expand=True)
+
+        elif lineup_frame.winfo_ismapped():
+            lineup_frame.pack_forget()
+            bands_settings_frame.pack(fill="both", expand=True)
+
+    def back_to_beginning():
+        global default_loaded
+        
+        simulation_buttons_frame.pack_forget()
+        left_simulation_container.pack_forget()
+        title_simulation_mode.pack_forget()
+        editor_frame.pack_forget()
+        bands_settings_frame.pack_forget()
+        bands_generate_settings_frame.pack_forget() 
+        lineup_frame.pack_forget()  
+
+        default_loaded = False
+
         main_frame.pack(fill="both", expand=True)
-
+        
     def save_actual_state():
         logs.save_actual_state(controller)
+        show_message("Nastavení uloženo")
 
     def save_merch():
-        merch = get_merch(bands_entries)
-        saving.save_merch_settings(merch)
+        merch = get_merch_settings()
+
+        if not isinstance(merch, dict):
+            show_message(merch)
+            return
+        
+        saving.save_data(merch, source.file_path_merch)
+        show_message("Nastavení uloženo")
 
     def save_capacities():
         capacities = get_capacities()
-        saving.save_capacities_settings(capacities)
+
+        if not isinstance(capacities, dict):
+            show_message(capacities)
+            return
+            
+        saving.save_data(capacities, source.file_path_capacities)
+        show_message("Nastavení uloženo")
 
     def save_fest_prices():
         prices = get_prices()
-        saving.save_fest_prices_settings(prices)
+
+        if not isinstance(prices, dict):
+            show_message(prices)
+            return
+        
+        saving.save_data(prices, source.file_path_fest_prices)
+        show_message("Nastavení uloženo")
 
     def save_time_settings():
         festival_times = get_times()
-        saving.save_time_settings(festival_times)
+
+        if not isinstance(festival_times, dict):
+            show_message(festival_times)
+            return
+
+        errors = validation.check_lineup_generation_settings(festival_times)
+
+        if errors:
+            show_message(errors)
+
+        else:
+            saving.save_data(festival_times, source.file_path_time_settings)
+            show_message("Nastavení uloženo")
+
+    def save_highlighs():
+        highlighs_settings = get_highlighs_settings()
+
+        if isinstance(highlighs_settings, list):
+            show_message(highlighs_settings)
+            return
+
+        else:
+            saving.save_data(highlighs_settings, source.file_path_highlighs)
+            show_message("Nastavení uloženo.")
+
+    def save_opening_hours():
+        opening_hours_settings = get_opening_hours_settings()
+
+        if isinstance(opening_hours_settings, list):
+            show_message(opening_hours_settings)
+            return
+
+        else:
+            saving.save_data(opening_hours_settings, source.file_path_stalls_opening_hours)
+            show_message("Nastavení uloženo")
 
     def save():
         nonlocal loaded
 
-        saving.save(zones_data)
-        print("Rozložení úspěšně uloženo do festival_settings.json")
-        loaded = True
+        status = saving.save(zones_data)
 
-    def print_zones_data():
-        global zones_data
-        print(zones_data)
+        if status:
+            show_message("Festivalový areál úspěšně uložen")
+            loaded = True
     
     def load():
         nonlocal loaded
 
         delete()
-        data = loading.load(auto=False)
+        data = loading.load_festival_area(auto=False)
         draw_load(data)
         loaded = True
 
     def load_default():
         nonlocal loaded
+        print("LOAD DEFAULT SE SPUSTIL")
 
-        data = loading.load(auto=True)
-        draw_load(data)
-        loaded = True
+        try:
+            data = loading.load_festival_area(auto=True)
+
+        except FileNotFoundError:
+            print("Dosud nebyl vytvořen žádný festivalový areál")
+            return
+        
+        else:
+            draw_load(data)
+            loaded = True
 
     def delete():
         global zones_data, selected_zone_instance, selected_object, selected_line
@@ -426,79 +896,112 @@ def run_app():
     screen_height = root.winfo_screenheight()
 
 #------------------------------------------------------------------STYLY----------------------------------------------------------------------------------------------------
+    def make_gray(img):
+        gray = ImageOps.grayscale(img)
+        gray = gray.convert("RGB")
+        return gray
     
-    pizza = ImageTk.PhotoImage(Image.open("data/emojis/pizza.png").resize((23, 23)))
-    ticket_booth = ImageTk.PhotoImage(Image.open("data/emojis/dollar.png").resize((23, 23)))
-    beer = ImageTk.PhotoImage(Image.open("data/emojis/beer.png").resize((23, 23)))
-    hamburger = ImageTk.PhotoImage(Image.open("data/emojis/hamburger.png").resize((23, 23)))
-    grill = ImageTk.PhotoImage(Image.open("data/emojis/cut_of_meat.png").resize((23, 23)))
-    gyros = ImageTk.PhotoImage(Image.open("data/emojis/burrito.png").resize((23, 23)))
-    langos = ImageTk.PhotoImage(Image.open("data/emojis/flatbread.png").resize((23, 23)))
-    fries = ImageTk.PhotoImage(Image.open("data/emojis/fries.png").resize((23, 23)))
-    sweet = ImageTk.PhotoImage(Image.open("data/emojis/doughnut.png").resize((23, 23)))
-    atm = ImageTk.PhotoImage(Image.open("data/emojis/atm.png").resize((23, 23)))
-    battery = ImageTk.PhotoImage(Image.open("data/emojis/battery.png").resize((23, 23)))
-    tables = ImageTk.PhotoImage(Image.open("data/emojis/table.png").resize((23, 23)))
-    soft_drinks = ImageTk.PhotoImage(Image.open("data/emojis/cup_with_straw.png").resize((23, 23)))
-    wc = ImageTk.PhotoImage(Image.open("data/emojis/restroom.png").resize((23, 23)))
-    shower = ImageTk.PhotoImage(Image.open("data/emojis/shower.png").resize((23, 23)))
-    cigars = ImageTk.PhotoImage(Image.open("data/emojis/smoking.png").resize((23, 23)))
-    washing = ImageTk.PhotoImage(Image.open("data/emojis/soap.png").resize((23, 23)))
-    cocktails = ImageTk.PhotoImage(Image.open("data/emojis/tropical_drink.png").resize((23, 23)))
-    water_pipe = ImageTk.PhotoImage(Image.open("data/emojis/bubbles.png").resize((23, 23)))
-    stage = ImageTk.PhotoImage(Image.open("data/emojis/guitar.png").resize((23, 23)))
-    signing = ImageTk.PhotoImage(Image.open("data/emojis/writing_hand.png").resize((23, 23)))
-    merch = ImageTk.PhotoImage(Image.open("data/emojis/shirt.png").resize((23, 23)))
-    shot = ImageTk.PhotoImage(Image.open("data/emojis/shot.png").resize((23, 23)))
-    chill = ImageTk.PhotoImage(Image.open("data/emojis/beach.png").resize((23, 23)))
-    rollercoaster = ImageTk.PhotoImage(Image.open("data/emojis/roller_coaster.png").resize((23, 23)))
-    jumping_castle = ImageTk.PhotoImage(Image.open("data/emojis/jumping_castle.png").resize((23, 23)))
-    hammer = ImageTk.PhotoImage(Image.open("data/emojis/hammer.png").resize((23, 23)))
-    carousel = ImageTk.PhotoImage(Image.open("data/emojis/carousel.png").resize((23, 23)))
-    bungeejumping = ImageTk.PhotoImage(Image.open("data/emojis/bungeejumping.png").resize((23, 23)))
-    bench = ImageTk.PhotoImage(Image.open("data/emojis/bench.png").resize((23, 23)))
-    cup_return = ImageTk.PhotoImage(Image.open("data/emojis/back.png").resize((23, 23)))
-    tent = ImageTk.PhotoImage(Image.open("data/emojis/tent.png").resize((22, 22)))
-    door = ImageTk.PhotoImage(Image.open("data/emojis/door.png").resize((22, 22)))
+    pizza = Image.open("data/emojis/pizza.png").resize((23, 23)) 
+    ticket_booth = Image.open("data/emojis/dollar.png").convert("RGBA").resize((23, 23)) 
+    beer = Image.open("data/emojis/beer.png").convert("RGBA").resize((23, 23))
+    hamburger = Image.open("data/emojis/hamburger.png").convert("RGBA").resize((23, 23)) 
+    grill = Image.open("data/emojis/cut_of_meat.png").convert("RGBA").resize((23, 23)) 
+    gyros = Image.open("data/emojis/burrito.png").convert("RGBA").resize((23, 23)) 
+    langos = Image.open("data/emojis/flatbread.png").convert("RGBA").resize((23, 23)) 
+    fries = Image.open("data/emojis/fries.png").convert("RGBA").resize((23, 23)) 
+    sweet = Image.open("data/emojis/doughnut.png").convert("RGBA").resize((23, 23)) 
+    atm = Image.open("data/emojis/atm.png").convert("RGBA").resize((23, 23)) 
+    battery = Image.open("data/emojis/battery.png").convert("RGBA").resize((23, 23)) 
+    tables = Image.open("data/emojis/table.png").convert("RGBA").resize((23, 23)) 
+    soft_drinks = Image.open("data/emojis/cup_with_straw.png").convert("RGBA").resize((23, 23)) 
+    wc = Image.open("data/emojis/restroom.png").convert("RGBA").resize((23, 23)) 
+    shower = Image.open("data/emojis/shower.png").convert("RGBA").resize((23, 23)) 
+    cigars = Image.open("data/emojis/smoking.png").convert("RGBA").resize((23, 23)) 
+    washing = Image.open("data/emojis/soap.png").convert("RGBA").resize((23, 23)) 
+    cocktails = Image.open("data/emojis/tropical_drink.png").convert("RGBA").resize((23, 23)) 
+    water_pipe = Image.open("data/emojis/bubbles.png").convert("RGBA").resize((23, 23)) 
+    stage = Image.open("data/emojis/guitar.png").convert("RGBA").resize((23, 23)) 
+    signing = Image.open("data/emojis/writing_hand.png").convert("RGBA").resize((23, 23)) 
+    merch = Image.open("data/emojis/shirt.png").convert("RGBA").resize((23, 23)) 
+    shot = Image.open("data/emojis/shot.png").convert("RGBA").resize((23, 23)) 
+    chill = Image.open("data/emojis/beach.png").convert("RGBA").resize((23, 23)) 
+    rollercoaster = Image.open("data/emojis/roller_coaster.png").convert("RGBA").resize((23, 23)) 
+    jumping_castle = Image.open("data/emojis/jumping_castle.png").convert("RGBA").resize((23, 23)) 
+    hammer = Image.open("data/emojis/hammer.png").convert("RGBA").resize((23, 23)) 
+    carousel = Image.open("data/emojis/carousel.png").convert("RGBA").resize((23, 23)) 
+    bungeejumping = Image.open("data/emojis/bungeejumping.png").convert("RGBA").resize((23, 23)) 
+    bench = Image.open("data/emojis/bench.png").convert("RGBA").resize((23, 23)) 
+    cup_return = Image.open("data/emojis/back.png").convert("RGBA").resize((23, 23)) 
+    tent = Image.open("data/emojis/tent.png").convert("RGBA").resize((22, 22)) 
+    door = Image.open("data/emojis/door.png").convert("RGBA").resize((22, 22)) 
+    
+    OBJECT_IMAGES = {
+        "Louka na stanování": [ImageTk.PhotoImage(tent), "Louka na stanování"],
+        "Chill stánek": [ImageTk.PhotoImage(chill), "Chill stánek"],
+        "Skákací hrad": [ImageTk.PhotoImage(jumping_castle), "Skákací hrad"],
+        "Horská dráha": [ImageTk.PhotoImage(rollercoaster), "Horská dráha"],
+        "Kladivo": [ImageTk.PhotoImage(hammer), "Kladivo"],
+        "Řetizkáč": [ImageTk.PhotoImage(carousel), "Řetizkáč"],
+        "Bungee-jumping": [ImageTk.PhotoImage(bungeejumping), "Bungee-jumping"],
+        "Lavice": [ImageTk.PhotoImage(bench), "Lavice"],
+        "Výkup kelímků": [ImageTk.PhotoImage(cup_return), "Výkup kelímků"],
+        "Pizza stánek": [ImageTk.PhotoImage(pizza), "Pizza"],
+        "Pokladna": [ImageTk.PhotoImage(ticket_booth), "Pokladna"],
+        "Burger stánek": [ImageTk.PhotoImage(hamburger), "Burgery"],
+        "Gyros stánek": [ImageTk.PhotoImage(gyros), "Gyros"],
+        "Grill stánek": [ImageTk.PhotoImage(grill), "Grill"],
+        "Bel hranolky stánek": [ImageTk.PhotoImage(fries), "Belgické hranolky"],
+        "Langoš stánek": [ImageTk.PhotoImage(langos), "Langoše"],
+        "Sladký stánek": [ImageTk.PhotoImage(sweet), "Sladké"],
+        "Pivní stánek": [ImageTk.PhotoImage(beer), "Pivo"],
+        "Nealko stánek": [ImageTk.PhotoImage(soft_drinks), "Nealko"],
+        "Red Bull stánek": [ImageTk.PhotoImage(shot), "RedBull"],
+        "Stánek s míchanými drinky": [ImageTk.PhotoImage(cocktails), "Míchané drinky"],
+        "Bankomat": [ImageTk.PhotoImage(atm), "Bankomat"],
+        "Dobíjecí stan": [ImageTk.PhotoImage(battery), "Nabíjení telefonů"],
+        "Stoly": [ImageTk.PhotoImage(tables), "Stoly"],
+        "Toitoiky": [ImageTk.PhotoImage(wc), "Toitoiky"],
+        "Umývárna": [ImageTk.PhotoImage(washing), "Umývárna"],
+        "Sprchy": [ImageTk.PhotoImage(shower), "Sprchy"],
+        "Cigaretový stánek": [ImageTk.PhotoImage(cigars), "Cigarety"],
+        "Stánek s vodníma dýmkama": [ImageTk.PhotoImage(water_pipe), "Vodní dýmka"],
+        "Podium": [ImageTk.PhotoImage(stage), "Pódium"],
+        "Stan na autogramiády": [ImageTk.PhotoImage(signing), "Autogramiády"],
+        "Merch stan": [ImageTk.PhotoImage(merch), "Merch"],
+        "Vstup": [ImageTk.PhotoImage(door), "Vstup"]
+    }
 
-    OBJECT_IMAGES = {"Louka na stanování": [tent, "Louka na stanování"],
-                    "Chill stánek": [chill, "Chill stánek"],
-                    "Skákací hrad": [jumping_castle, "Skákací hrad"],
-                    "Horská dráha": [rollercoaster, "Horská dráha"],
-                    "Kladivo": [hammer, "Kladivo"],
-                    "Řetizkáč": [carousel, "Řetizkáč"],
-                    "Bungee-jumping": [bungeejumping, "Bungee-jumping"],
-                    "Lavice": [bench, "Lavice"],
-                    "Výkup kelímků": [cup_return, "Výkup kelímků"],
-                    "Pizza stánek": [pizza, "Pizza"],
-                    "Pokladna": [ticket_booth, "Pokladna"],
-                    "Burger stánek": [hamburger, "Burgery"],
-                    "Gyros stánek": [gyros, "Gyros"],
-                    "Grill stánek": [grill, "Grill"],
-                    "Bel hranolky stánek": [fries, "Belgické hranolky"],
-                    "Langoš stánek": [langos, "Langoše"],
-                    "Sladký stánek": [sweet, "Sladké"],
-                    "Pivní stánek": [beer, "Pivo"],
-                    "Nealko stánek": [soft_drinks, "Nealko"],
-                    "Red Bull stánek": [shot, "RedBull"],
-                    "Stánek s míchanými drinky": [cocktails, "Míchané drinky"],
-                    "Bankomat": [atm, "Bankomat"],
-                    "Dobíjecí stan": [battery, "Nabíjení telefonů"],
-                    "Stoly": [tables, "Stoly"],
-                    "Toitoiky": [wc, "Toitoiky"],
-                    "Umývárna": [washing, "Umývárna"],
-                    "Sprchy": [shower, "Sprchy"],
-                    "Cigaretový stánek": [cigars, "Cigarety"],
-                    "Stánek s vodníma dýmkama": [water_pipe, "Vodní dýmka"],
-                    "Podium": [stage, "Pódium"],
-                    "Stan na autogramiády": [signing, "Autogramiády"],
-                    "Merch stan": [merch, "Merch"],
-                    "Vstup": [door, "Vstup"]}
-
+    GRAY_OBJECT_IMAGES = {
+        "pizza_stall": ImageTk.PhotoImage(make_gray(pizza)),
+        "beer_stall": ImageTk.PhotoImage(make_gray(beer)),
+        "burger_stall": ImageTk.PhotoImage(make_gray(hamburger)),
+        "grill_stall": ImageTk.PhotoImage(make_gray(grill)),
+        "gyros_stall": ImageTk.PhotoImage(make_gray(gyros)),
+        "langos_stall": ImageTk.PhotoImage(make_gray(langos)),
+        "belgian_fries_stall": ImageTk.PhotoImage(make_gray(fries)),
+        "sweet_stall": ImageTk.PhotoImage(make_gray(sweet)),
+        "charging_stall": ImageTk.PhotoImage(make_gray(battery)),
+        "nonalcohol_stall": ImageTk.PhotoImage(make_gray(soft_drinks)),
+        "cigaret_stall": ImageTk.PhotoImage(make_gray(cigars)),
+        "cocktail_stall": ImageTk.PhotoImage(make_gray(cocktails)),
+        "water_pipe_stall": ImageTk.PhotoImage(make_gray(water_pipe)),
+        "signing_stall": ImageTk.PhotoImage(make_gray(signing)),
+        "merch_stall": ImageTk.PhotoImage(make_gray(merch)),
+        "redbull_stall": ImageTk.PhotoImage(make_gray(shot)),
+        "chill_stall": ImageTk.PhotoImage(make_gray(chill)),
+        "rollercoaster": ImageTk.PhotoImage(make_gray(rollercoaster)),
+        "jumping_castle": ImageTk.PhotoImage(make_gray(jumping_castle)),
+        "hammer": ImageTk.PhotoImage(make_gray(hammer)),
+        "carousel": ImageTk.PhotoImage(make_gray(carousel)),
+        "bungee_jumping": ImageTk.PhotoImage(make_gray(bungeejumping)),
+        "bench": ImageTk.PhotoImage(make_gray(bench)),
+        "cup_return": ImageTk.PhotoImage(make_gray(cup_return)),
+    }
 
     label_style = {"bg": "black", "fg": "white", "font": ("Arial", 20)}
-    entry_style = {"font": ("Arial", 18), "bg": "#222", "fg": "white", "insertbackground": "white", "width": 10}
-    entry_style2 = {"font": ("Arial", 18),  "bg": "#222", "fg": "white", "insertbackground": "white", "width": 5}
+    subtitle_label_style = {"bg": "black", "fg": "white", "font": ("Arial", 25, "bold")}
+    entry_style = {"font": ("Arial", 18), "bg": "white", "fg": "black", "justify": "center", "insertbackground": "black", "width": 10}
+    entry_style2 = {"font": ("Arial", 18),  "bg": "white", "fg": "black", "justify": "center", "insertbackground": "black", "width": 5}
 
     def blue_button(parent, text, command, text_size = None):
         if text_size:
@@ -521,12 +1024,12 @@ def run_app():
             font = ("Arial", size)
 
         return ctk.CTkButton(parent, text=text, command=command, corner_radius=20, fg_color="blue", hover_color="#2f4dfa", text_color="white", width=90, height=50, font=font)
-        
+
+    def button_mini(parent, text, command):
+        return ctk.CTkButton(parent, text=text, command=command, corner_radius=10, fg_color="white", hover_color="#8a8a8a", text_color="black", width=50, height=25, font=("Arial", 15))
+
     def red_button(parent, text, command):
         return ctk.CTkButton(parent, text=text, command=command, corner_radius=20, fg_color="red", hover_color="#fc4437", text_color="white", width=150, height=65, font=("Arial", 25))
-    
-    def red_button_small(parent, text, command):
-        return ctk.CTkButton(parent, text=text, command=command, corner_radius=20, fg_color="red", hover_color="#fc4437", text_color="white", width=90, height=50, font=("Arial", 18))
     
     def green_button(parent, text, command):
         return ctk.CTkButton(parent, text=text, command=command, corner_radius=20, fg_color="green", hover_color="#4ef35c", text_color="white", width=150, height=65, font=("Arial", 25))
@@ -549,21 +1052,50 @@ def run_app():
 
         return img, text
     
-    def show_message(message, automatic_close = None):
-        warning = ctk.CTkFrame(root, corner_radius=20, fg_color="black")
+    def show_message(message, sim_done=None):
+        warning = ctk.CTkFrame(root, fg_color="black", border_width=2, border_color="white")
         warning.place(relx=0.5, rely=0.5, anchor="center")
 
+        if isinstance(message, list):
+            message = "\n".join(message)
+  
         label = tk.Label(warning, text=message, fg="white", bg="black", font=("Arial", 18, "bold"))
+
         label.pack(padx=30, pady=(20, 10))
 
         def close_message():
             warning.destroy()
 
-        close_btn = red_button_small(warning, "Zavřít", close_message)
-        close_btn.pack_forget()
+        def sim_over():
+            close_message()
+            back_to_beginning()
 
-        if not automatic_close:
+        if sim_done:
+            close_btn = blue_button_small(warning, "Zavřít", sim_over)
             close_btn.pack(pady=(0, 15))
+
+        else:
+            close_btn = blue_button_small(warning, "Zavřít", close_message)
+            close_btn.pack(pady=(0, 15))
+ 
+        
+    def make_color_picker(parent, default_color):
+        frame = tk.Frame(parent, bg="black")
+        color_value = {"color": default_color}
+
+        preview = tk.Label(frame, bg=default_color, width=4, height=1, relief="ridge", bd=2)
+        preview.grid(row=0, column=0, padx=15)
+
+        def pick_color():
+            color = colorchooser.askcolor(title="Vyber barvu")[1]
+            if color:
+                color_value["color"] = color
+                preview.config(bg=color)
+
+        btn = button_mini(frame, text="Vybrat", command=pick_color)
+        btn.grid(row=0, column=1, padx=(0,20))
+
+        return frame, color_value
 
 
     # ---------- OBRAZOVKA 1: Úvodní menu ----------
@@ -593,35 +1125,27 @@ def run_app():
     basic_settings_frame_title = ctk.CTkFrame(main_frame_middle, fg_color="black")
     basic_settings_frame_title.pack()
 
-    ctk.CTkLabel(basic_settings_frame_title, text="Nastavení", font=("Arial", 32,"bold"), fg_color="black", text_color="white").pack(padx=20, pady=10)
-    
+    main_settings = loading.load_settings(source.file_path_main_settings)
+
+    ctk.CTkLabel(basic_settings_frame_title, text="Nastavení", font=("Arial", 40, "bold"), fg_color="black", text_color="white").pack(padx=20, pady=10)
+
     basic_settings_frame = ctk.CTkFrame(main_frame_middle, fg_color="transparent", corner_radius=30)
     basic_settings_frame.pack(padx=10)
 
     tk.Label(basic_settings_frame, text="Počet návštěvníků:", **label_style).grid(row=0, column=0, pady=10, sticky="w")
-    entry_visitors = tk.Entry(basic_settings_frame, **entry_style)
+    entry_visitors = tk.Entry(basic_settings_frame, **entry_style2)
     entry_visitors.grid(row=0, column=1, pady=10)
-    entry_visitors.insert(0, "50")
+    entry_visitors.insert(0, main_settings.get("num_visitors", 50))
 
     tk.Label(basic_settings_frame, text="Počet dní:", **label_style).grid(row=1, column=0, pady=10, sticky="w")
-    entry_days = tk.Entry(basic_settings_frame, **entry_style)
+    entry_days = tk.Entry(basic_settings_frame, **entry_style2)
     entry_days.grid(row=1, column=1, pady=10)
-    entry_days.insert(0, "2")
+    entry_days.insert(0, main_settings.get("num_days", 2))
 
-    tk.Label(basic_settings_frame, text="Rozpočet pro kapely:", **label_style).grid(row=2, column=0, pady=10, sticky="w")
-    entry_budget = tk.Entry(basic_settings_frame, **entry_style)
-    entry_budget.grid(row=2, column=1, pady=10)
-    entry_budget.insert(0, "10000000")
-
-    tk.Label(basic_settings_frame, text="Počet kapel na den:", **label_style).grid(row=3, column=0, pady=10, sticky="w")
-    entry_num_bands = tk.Entry(basic_settings_frame, **entry_style)
-    entry_num_bands.grid(row=3, column=1, pady=10)
-    entry_num_bands.insert(0, "8")
-
-    tk.Label(basic_settings_frame, text="Čas začátku simulace:", **label_style).grid(row=4, column=0, pady=10, sticky="w")
-    simulation_start_time = tk.Entry(basic_settings_frame, **entry_style)
-    simulation_start_time.grid(row=4, column=1, pady=10)
-    simulation_start_time.insert(0, "09:00")
+    tk.Label(basic_settings_frame, text="Čas zahájení simulace:", **label_style).grid(row=2, column=0, pady=10, sticky="w")
+    entry_simulation_start_time = tk.Entry(basic_settings_frame, **entry_style2)
+    entry_simulation_start_time.grid(row=2, column=1, pady=10)
+    entry_simulation_start_time.insert(0, main_settings.get("simulation_start_time", "09:00"))
 
     advanced_settings_buttons_frame = tk.Frame(main_frame_middle, bg="black")
     advanced_settings_buttons_frame.pack()
@@ -629,14 +1153,17 @@ def run_app():
     stall_settings_button = blue_button_small(advanced_settings_buttons_frame, "Kapacity\nobjektů", open_stalls_settings, 14, bold=True)
     stall_settings_button.pack(side="left", padx=10, pady=20)
 
+    opening_times_settings_button = blue_button_small(advanced_settings_buttons_frame, "Provozní\ndoba\nstánků", open_opening_stalls_settings, 14, bold=True)
+    opening_times_settings_button.pack(side="left", padx=10, pady=20)
+
     prices_settings_button = blue_button_small(advanced_settings_buttons_frame, "Ceny\nfestivalu", open_prices_settings, 14, bold=True)
     prices_settings_button.pack(side="left", padx=10, pady=20) 
 
     merch_settings_button = blue_button_small(advanced_settings_buttons_frame, "Ceny\nmerche", open_merch_settings, 14, bold=True)
     merch_settings_button.pack(side="left", padx=10, pady=20) 
 
-    times_settings_button = blue_button_small(advanced_settings_buttons_frame, "Časy", open_times_settings, 14, bold=True)
-    times_settings_button.pack(side="left", padx=10, pady=20) 
+    highligh_settings_button = blue_button_small(advanced_settings_buttons_frame, "Označení\nobjektů", open_highligh_settings, 14, bold=True)
+    highligh_settings_button.pack(side="left", padx=10, pady=20)
 
     bottom_frame = ctk.CTkFrame(main_frame, fg_color="black", corner_radius=30)
     bottom_frame.pack(side="bottom", pady=30)
@@ -650,8 +1177,8 @@ def run_app():
     exit_button = red_button(bottom_frame, "Zavřít", exit_app)
     exit_button.pack(side="right", padx=10, pady=10)
 
-    editor_button = blue_button(bottom_frame, "Pokračovat", open_editor)
-    editor_button.pack(side="right", padx=10, pady=10)
+    continue_to_bands_button = green_button(bottom_frame, "Pokračovat", open_band_settings)
+    continue_to_bands_button.pack(side="right", padx=10, pady=10)
     
 
     # ---------- OBRAZOVKA3: Stall capacities settings
@@ -659,33 +1186,33 @@ def run_app():
     stall_settings_frame = tk.Frame(root, bg="black")
     stall_settings_frame.pack_forget()
 
-    capacities = loading.load_capacities_settings()
+    capacities = loading.load_settings(source.file_path_capacities)
 
-    tk.Label(stall_settings_frame, text="Kapacity", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(20, 20))
+    tk.Label(stall_settings_frame, text="Kapacity objektů", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(20, 20))
 
     left_fields = [
-        (1, "pizza_stall", "Pizza stánek:", 2),
-        (2, "burger_stall", "Burger stánek:", 2),
-        (3, "gyros_stall", "Gyros stánek:", 2),
-        (4, "grill_stall", "Grill stánek:", 2),
-        (5, "belgian_fries_stall", "Bel hranolky stánek:", 2),
-        (6, "langos_stall", "Langoš stánek:", 2),
-        (7, "sweet_stall", "Sladký stánek:", 2),
-        (8, "nonalcohol_stall", "Nealko stánek:", 2),
-        (9, "beer_stall", "Pivní stánek:", 2),
-        (10, "redbull_stall", "Red Bull stánek:", 2),
-        (11, "cocktail_stall", "Stánek s míchanými drinky:", 2),
-        (12, "showers", "Sprchy:", 5),
-        (13, "meadow_for_living", "Stany ve stanovém městečku:", 200),
-        (14, "cigaret_stall", "Stánek s cigaretama:", 1),
-        (15, "water_pipe_stall", "Stánek s vodníma dýmkama:", 20),
-        (16, "entrance", "Počet turniketů u vstupu:", 4),
-        (17, "cup_return", "Výkup kelímků:", 4),
+        (1, "pizza_stall", "Pizza stánek:", 2, 1, 10),
+        (2, "burger_stall", "Burger stánek:", 2, 1, 10),
+        (3, "gyros_stall", "Gyros stánek:", 2, 1, 10),
+        (4, "grill_stall", "Grill stánek:", 2, 1, 10),
+        (5, "belgian_fries_stall", "Bel hranolky stánek:", 2, 1, 10),
+        (6, "langos_stall", "Langoš stánek:", 2, 1, 10),
+        (7, "sweet_stall", "Sladký stánek:", 2, 1, 10),
+        (8, "nonalcohol_stall", "Nealko stánek:", 2, 1, 10),
+        (9, "beer_stall", "Pivní stánek:", 2, 1, 10),
+        (10, "redbull_stall", "Red Bull stánek:", 2, 1, 10),
+        (11, "cocktail_stall", "Stánek s míchanými drinky:", 2, 1, 10),
+        (12, "showers", "Sprchy:", 5, 1, 20),
+        (13, "meadow_for_living", "Kapacita stanů na louce:", 200, 1, 10000),
+        (14, "cigaret_stall", "Stánek s cigaretama:", 1, 1, 10),
+        (15, "water_pipe_stall", "Stánek s vodníma dýmkama:", 20, 1, 50),
+        (16, "entrance", "Počet turniketů u vstupu:", 4, 1, 10),
+        (17, "cup_return", "Výkup kelímků:", 4, 1, 10),
     ]   
 
-    left_entries = {}
+    cap_left_entries = {}
 
-    for row, key, label, default in left_fields:
+    for row, key, label, default, min_value, max_value in left_fields:
         tk.Label(stall_settings_frame, text=label, **label_style).grid(
             row=row, column=1, pady=5, sticky="w", padx=20
         )
@@ -694,30 +1221,30 @@ def run_app():
         entry.grid(row=row, column=2, padx=20)
         entry.insert(0, capacities.get(key, default))
 
-        left_entries[key] = entry
+        cap_left_entries[key] = [entry, label[:-1].lower(), min_value, max_value]
 
     right_fields = [
-        (1, "chill_stall", "Chill stánek", 20),
-        (2, "ticket_booth", "Pokladna:", 2),
-        (3, "toitoi", "Toitoiky:", 20),
-        (4, "handwashing_station", "Umývárna:", 20),
-        (5, "tables", "Stoly:", 20),
-        (6, "standing", "Plocha na stání u pódia:", 1000),
-        (7, "merch_stall", "Merch stan:", 3),
-        (8, "signing_stall", "Fronta na autogramiády", 200),
-        (9, "charging_stall", "Dobíjecí stan:", 2),
-        (10, "charging_stall_mobile", "Dobíjecí stan - max počet telefonů:", 20),
-        (11, "bungee_jumping", "Bungee-jumping:", 1),
-        (12, "rollercoaster", "Horská dráha:", 24),
-        (13, "bench", "Lavice (atrakce):", 20),
-        (14, "hammer", "Kladivo (atrakce):", 32),
-        (15, "carousel", "Řetizkáč:", 32),
-        (16, "jumping_castle", "Skákací hrad:", 8),
+        (1, "chill_stall", "Chill stánek", 20, 1, 50),
+        (2, "ticket_booth", "Pokladna:", 2, 1, 10),
+        (3, "toitoi", "Toitoiky:", 20, 10, 100),
+        (4, "handwashing_station", "Umývárna:", 20, 5, 50),
+        (5, "tables", "Stoly:", 20, 10, 100),
+        (6, "standing", "Plocha na stání u pódia:", 1000, 500, 100000),
+        (7, "merch_stall", "Merch stan:", 3, 1, 10),
+        (8, "signing_stall", "Fronta na autogramiády", 200, 10, 10000),
+        (9, "charging_stall", "Dobíjecí stan:", 2, 1, 10),
+        (10, "charging_stall_mobile", "Dobíjecí stan - max počet telefonů:", 20, 1, 100),
+        (11, "bungee_jumping", "Bungee-jumping:", 1, 1, 5),
+        (12, "rollercoaster", "Horská dráha:", 24, 10, 100),
+        (13, "bench", "Lavice (atrakce):", 20, 10, 100),
+        (14, "hammer", "Kladivo (atrakce):", 32, 10, 100),
+        (15, "carousel", "Řetizkáč:", 32, 10, 100),
+        (16, "jumping_castle", "Skákací hrad:", 8, 1, 100),
     ]
 
-    right_entries = {}
+    cap_right_entries = {}
 
-    for row, key, label, default in right_fields:
+    for row, key, label, default, min_value, max_value in right_fields:
         tk.Label(stall_settings_frame, text=label, **label_style).grid(
             row=row, column=4, pady=5, sticky="w", padx=20
         )
@@ -726,7 +1253,7 @@ def run_app():
         entry.grid(row=row, column=5, padx=20)
         entry.insert(0, capacities.get(key, default))
 
-        right_entries[key] = entry
+        cap_right_entries[key] = [entry, label[:-1].lower(), min_value, max_value]
 
     bottom_settings_stalls_frame = tk.Frame(stall_settings_frame, bg="black") 
     bottom_settings_stalls_frame.grid(row=20, column=0, columnspan=6, pady=20)
@@ -739,23 +1266,115 @@ def run_app():
 
     def get_capacities():
         capacities = {}
+        errors = []
 
-        for key, entry in left_entries.items():
-            capacities[key] = int(entry.get())
+        for key, entry in cap_left_entries.items():
+            value = validation.validate_int_range(entry[1], entry[0].get(), entry[2], entry[3])
+            
+            if isinstance(value, int):
+                capacities[key] = value
 
-        for key, entry in right_entries.items():
-            capacities[key] = int(entry.get())
+            else: 
+                errors.append(value)
+            
+        for key, entry in cap_right_entries.items():
+            value = validation.validate_int_range(entry[1], entry[0].get(), entry[2], entry[3])
+            
+            if isinstance(value, int):
+                capacities[key] = value
+
+            else: 
+                errors.append(value)
 
         capacities["atm"] = 1
 
-        return capacities
+        return capacities if not errors else errors
     
-    # ---------- OBRAZOVKA4: Prices settings
+#---------------------------------------------------------------------OBRAZOVKA 4: Otevírací doba stánků------------------------------------------------------------------
+    
+    stalls_opening_hours_frame = tk.Frame(root, bg="black")
+    stalls_opening_hours_frame.pack_forget()
+
+    opening_settings = loading.load_settings(source.file_path_stalls_opening_hours)
+
+    tk.Label(stalls_opening_hours_frame, text="Nastavení provozní doby stánků", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=4, pady=30, padx=10)
+
+    tk.Label(stalls_opening_hours_frame, text="Otevírací doba", **label_style).grid(row=2, column=1, padx=(0,20))
+    tk.Label(stalls_opening_hours_frame, text="Zavírací doba", **label_style).grid(row=2, column=2, padx=(0,20))
+
+    tk.Label(
+        stalls_opening_hours_frame,
+        text="Provozní doba stánků mimo festivalový areál:",
+        **label_style
+    ).grid(row=3, column=0, sticky="w", padx=50)
+
+    entry_outside_open = tk.Entry(stalls_opening_hours_frame, **entry_style2)
+    entry_outside_open.insert(0, opening_settings["outside_festival_area"]["open"])
+    entry_outside_open.grid(row=3, column=1)
+
+    entry_outside_close = tk.Entry(stalls_opening_hours_frame, **entry_style2)
+    entry_outside_close.insert(0, opening_settings["outside_festival_area"]["close"])
+    entry_outside_close.grid(row=3, column=2)
+
+
+    tk.Label(stalls_opening_hours_frame, text="Otevírací doba", **label_style).grid(row=6, column=1, padx=(0,20))
+    tk.Label(stalls_opening_hours_frame, text="Zavírací doba", **label_style).grid(row=6, column=2, padx=(0,20))
+
+    tk.Label(stalls_opening_hours_frame,text="Provozní doba stánků ve festivalovém areálu:",**label_style).grid(row=7, column=0, sticky="w", padx=50)
+
+    entry_inside_open = tk.Entry(stalls_opening_hours_frame, **entry_style2)
+    entry_inside_open.insert(0, opening_settings["inside_festival_area"]["open"])
+    entry_inside_open.grid(row=7, column=1)
+
+    entry_inside_close = tk.Entry(stalls_opening_hours_frame, **entry_style2)
+    entry_inside_close.insert(0, opening_settings["inside_festival_area"]["close"])
+    entry_inside_close.grid(row=7, column=2)
+
+    bottom_opening_frame = tk.Frame(stalls_opening_hours_frame, bg="black")
+    bottom_opening_frame.grid(row=50, column=0, columnspan=4, pady=40)
+
+    save_button = blue_button(bottom_opening_frame, "Uložit\nnastavení", save_opening_hours)
+    save_button.pack(side="left", padx=10)
+
+    back_button = blue_button(bottom_opening_frame, "Zpět", go_back)
+    back_button.pack(side="left", padx=10)
+
+
+    def get_opening_hours_settings():
+        errors = []
+
+        result = {"outside_festival_area": {}, "inside_festival_area": {}}
+        outside_open = validation.validate_time_string("otvírací doba mimo areál", entry_outside_open.get(), "06:00", "20:00")
+        outside_close = validation.validate_time_string("zavírací doba mimo areál", entry_outside_close.get(), "15:00", "06:00") 
+        inside_open = validation.validate_time_string("otvírací doba v areálu", entry_inside_open.get(), "06:00", "20:00") 
+        inside_close = validation.validate_time_string("zavírací doba v areálu", entry_inside_close.get(), "15:00", "06:00") 
+
+        for entry in [outside_open, outside_close, inside_open, inside_close]:
+            if "Hodnota" in entry:
+                errors.append(entry)
+        
+        if errors:
+            return errors
+        
+        result["outside_festival_area"]["open"] = outside_open
+        result["outside_festival_area"]["close"] = outside_close
+        result["inside_festival_area"]["open"] = inside_open
+        result["inside_festival_area"]["close"]= inside_close
+
+        fault = validation.check_opening_hours_conflicts(result)
+
+        if fault:
+            errors.append(fault)
+
+        return errors if errors else result
+
+
+#-------------------------------------------------------------------- OBRAZOVKA 5: Prices settings------------------------------------------------------------------------
 
     prices_settings_frame = tk.Frame(root, bg="black")
     prices_settings_frame.pack_forget()
 
-    prices = loading.load_fest_prices_settings()
+    prices = loading.load_settings(source.file_path_fest_prices)
 
     tk.Label(prices_settings_frame, text="Ceny", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(10, 10))
 
@@ -784,12 +1403,12 @@ def run_app():
             row=row, column=0, padx=20, pady=10, sticky="w"
         )
 
-        entry = tk.Entry(prices_settings_frame, **entry_style)
+        entry = tk.Entry(prices_settings_frame, **entry_style2)
         entry.grid(row=row, column=1, pady=10)
 
         entry.insert(0, prices.get(key, default))
 
-        price_entries[key] = entry
+        price_entries[key] = [entry, label[:-1].lower()]
 
         tk.Label(prices_settings_frame, text="Kč  ", **label_style).grid(
             row=row, column=2, pady=10, sticky="w"
@@ -807,28 +1426,35 @@ def run_app():
 
     def get_prices():
         prices = {}
+        errors = []
 
         for key, entry in price_entries.items():
-            prices[key] = int(entry.get())
+            value = validation.validate_int_range(entry[1], entry[0].get(), 1, 100000)
+            
+            if isinstance(value, int):
+                prices[key] = value
 
-        return prices
+            else: 
+                errors.append(value)
+
+        return prices if not errors else errors
         
-    # ---------- OBRAZOVKA5: Merch settings
+#-------------------------------------------------------------------------- OBRAZOVKA6: Merch settings-------------------------------------------------------------------
     
-    bands_merch, festival_merch = loading.load_merch_settings()
-
     merch_frame = tk.Frame(root, bg="black")
     merch_frame.pack_forget()
 
     tk.Label(merch_frame,text="Ceny v merch stánku", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=6, pady=(40, 40))
 
-    tk.Label(merch_frame, text="Merch kapel", **label_style).grid(row=1, column=0, columnspan=3, pady=10)
-    tk.Label(merch_frame, text="Merch", **label_style).grid(row=2, column=0, padx=50)
+    tk.Label(merch_frame, text="Merch kapel", **subtitle_label_style).grid(row=1, column=0, columnspan=3, pady=10)
+    tk.Label(merch_frame, text="Merch", **label_style).grid(row=2, column=0)
     tk.Label(merch_frame, text="Cena", **label_style).grid(row=2, column=1)
-    tk.Label(merch_frame, text="Kusů", **label_style).grid(row=2, column=2, padx=(10,0))
+    tk.Label(merch_frame, text="Kusů", **label_style).grid(row=2, column=2)
 
     bands_entries = {}
     row_index = 3
+    
+    bands_merch, festival_merch = loading.load_settings(source.file_path_merch)
 
     for item in bands_merch:
 
@@ -840,7 +1466,7 @@ def run_app():
         price_entry.grid(row=row_index, column=1)
 
         quantity_entry = tk.Entry(merch_frame, **entry_style2)
-        quantity_entry.grid(row=row_index, column=2, padx=(10,0))
+        quantity_entry.grid(row=row_index, column=2, padx=10)
 
 
         if "price" in bands_merch[item]:
@@ -855,10 +1481,10 @@ def run_app():
         row_index += 1
 
 
-    tk.Label(merch_frame, text="Festivalový merch", **label_style).grid(row=1, column=3, columnspan=3, pady=10)
+    tk.Label(merch_frame, text="Festivalový merch", **subtitle_label_style).grid(row=1, column=3, columnspan=3, pady=10)
     tk.Label(merch_frame, text="Merch", **label_style).grid(row=2, column=3)
     tk.Label(merch_frame, text="Cena", **label_style).grid(row=2, column=4)
-    tk.Label(merch_frame, text="Kusů", **label_style).grid(row=2, column=5, padx=(10,0))
+    tk.Label(merch_frame, text="Kusů", **label_style).grid(row=2, column=5, padx=(10,50))
 
     festival_entries = {}
     row_index = 3
@@ -873,7 +1499,7 @@ def run_app():
         price_entry.grid(row=row_index, column=4)
 
         quantity_entry = tk.Entry(merch_frame, **entry_style2)
-        quantity_entry.grid(row=row_index, column=5, padx=(10,30))
+        quantity_entry.grid(row=row_index, column=5, padx=(10, 50))
 
   
         if "price" in festival_merch[item]:
@@ -896,113 +1522,527 @@ def run_app():
         back_button = blue_button(bottom_merch_frame, "Zpět", go_back)
         back_button.pack(side="left", padx=10)
 
-    def get_merch(bands_entries):
+    def get_merch_settings():
 
         merch = {
             "bands_merch": {},
             "festival_merch": {}
         }
 
+        errors = []
+
         for item, entries in bands_entries.items():
 
-            try:
-                price = int(entries["price"].get())
-            except ValueError:
-                price = 0
+            price = validation.validate_int_range("cena", entries["price"].get(), 1, 10000)
+            quantity = validation.validate_int_range("počet kusů", entries["quantity"].get(), 1, 10000)
 
-            try:
-                quantity = int(entries["quantity"].get())
-            except ValueError:
-                quantity = 0
+            if isinstance(price, int) and isinstance(quantity, int):
+                merch["bands_merch"][item] = {
+                    "price": price,
+                    "quantity": quantity
+                }
 
-            merch["bands_merch"][item] = {
-                "price": price,
-                "quantity": quantity
-            }
+            elif not isinstance(price, int) and price not in errors:
+                errors.append(price)
+
+            elif not isinstance(quantity, int) and quantity not in errors:
+                errors.append(quantity)
+
+            if len(errors) == 2:
+                return errors
 
         for item, entries in festival_entries.items():
 
-            try:
-                price = int(entries["price"].get())
-            except ValueError:
-                price = 0
+            price = validation.validate_int_range("cena", entries["price"].get(), 1, 10000)
+            quantity = validation.validate_int_range("počet kusů", entries["quantity"].get(), 1, 10000)
 
-            try:
-                quantity = int(entries["quantity"].get())
-            except ValueError:
-                quantity = 0
+            if isinstance(price, int) and isinstance(quantity, int):
+                merch["festival_merch"][item] = {
+                    "price": price,
+                    "quantity": quantity
+                }
 
-            merch["festival_merch"][item] = {
-                "price": price,
-                "quantity": quantity
-            }
+            elif not isinstance(price, int) and price not in errors:
+                errors.append(price)
+                
+            elif not isinstance(quantity, int) and quantity not in errors:
+                errors.append(quantity)
 
-        return merch
+            if len(errors) == 2:
+                return errors
 
-    # ---------- OBRAZOVKA6: Times settings
-    times_settings_frame = tk.Frame(root, bg="black")
-    times_settings_frame.pack_forget()
-
-    tk.Label(times_settings_frame, text="Časy", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(40, 40))
+        return merch if not errors else errors
     
-    festival_times = loading.load_time_settings()
+#-------------------------------------------------------------------------OBRAZOVKA 7: Nastavení zvýraznění stánků-----------------------------------------------------------
+    
+
+    highlighs_settings_frame = tk.Frame(root, bg="black")
+    highlighs_settings_frame.pack_forget()
+
+    highlighs_settings = loading.load_settings(source.file_path_highlighs)
+
+    tk.Label(highlighs_settings_frame, text="Nastavení zvýraznění stánků", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=6, pady=(40, 40))
+
+
+    tk.Label(highlighs_settings_frame, text="Fronty u stánků", **subtitle_label_style).grid(row=1, column=0, columnspan=3, pady=10)
+
+    tk.Label(highlighs_settings_frame, text="Od", **label_style).grid(row=2, column=1)
+    tk.Label(highlighs_settings_frame, text="Barva", **label_style).grid(row=2, column=2)
+
+    tk.Label(highlighs_settings_frame, text="Stánek je využíván:", **label_style).grid(row=3, column=0, sticky="w", padx=50)
+    color_stall_is_used_frame, entry_stall_is_used = make_color_picker(highlighs_settings_frame, highlighs_settings["stalls"]["colors"]["used"])
+    color_stall_is_used_frame.grid(row=3, column=2)
+    
+  
+    tk.Label(highlighs_settings_frame, text="Malá fronta", **label_style).grid(row=4, column=0, sticky="w", padx=50)
+    entry_stalls_low = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stalls_low.insert(0, highlighs_settings["stalls"]["borders"]["low"])
+    entry_stalls_low.grid(row=4, column=1)
+
+    color_low_frame, entry_color_low = make_color_picker(highlighs_settings_frame, highlighs_settings["stalls"]["colors"]["low"])
+    color_low_frame.grid(row=4, column=2)
+
+    
+    tk.Label(highlighs_settings_frame, text="Střední fronta:", **label_style).grid(row=5, column=0, sticky="w", padx=50)
+    entry_stalls_medium = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stalls_medium.insert(0, highlighs_settings["stalls"]["borders"]["medium"])
+    entry_stalls_medium.grid(row=5, column=1)
+
+    color_medium_frame, entry_color_medium = make_color_picker(highlighs_settings_frame,highlighs_settings["stalls"]["colors"]["medium"])
+    color_medium_frame.grid(row=5, column=2)
+
+
+    tk.Label(highlighs_settings_frame, text="Velká fronta:", **label_style).grid(row=6, column=0, sticky="w", padx=50)
+    entry_stalls_high = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stalls_high.insert(0, highlighs_settings["stalls"]["borders"]["high"])
+    entry_stalls_high.grid(row=6, column=1)
+
+    color_high_frame, entry_color_high = make_color_picker(highlighs_settings_frame,highlighs_settings["stalls"]["colors"]["high"])
+    color_high_frame.grid(row=6, column=2)
+
+
+    tk.Label(highlighs_settings_frame, text="Zaplnění plochy u pódia", **subtitle_label_style).grid(row=1, column=3, columnspan=3, pady=10)
+
+    tk.Label(highlighs_settings_frame, text="Od", **label_style).grid(row=2, column=4)
+    tk.Label(highlighs_settings_frame, text="Barva", **label_style).grid(row=2, column=5)
+
+
+    tk.Label(highlighs_settings_frame, text="Nízká návštěvnost:", **label_style).grid(row=3, column=3, sticky="w", padx=50)
+    entry_stage_low = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stage_low.insert(0, highlighs_settings["stage"]["borders"]["low"])
+    entry_stage_low.grid(row=3, column=4)
+
+    stage_color_low_frame, entry_stage_color_low = make_color_picker(highlighs_settings_frame,highlighs_settings["stage"]["colors"]["low"])
+    stage_color_low_frame.grid(row=3, column=5)
+
+    tk.Label(highlighs_settings_frame, text="Střední návštěvnost:", **label_style).grid(row=4, column=3, sticky="w", padx=50)
+    entry_stage_medium = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stage_medium.insert(0, highlighs_settings["stage"]["borders"]["medium"])
+    entry_stage_medium.grid(row=4, column=4)
+
+    stage_color_medium_frame, entry_stage_color_medium = make_color_picker(highlighs_settings_frame,highlighs_settings["stage"]["colors"]["medium"])
+    stage_color_medium_frame.grid(row=4, column=5)
+
+    tk.Label(highlighs_settings_frame, text="Vysoká návštěvnost:", **label_style).grid(row=5, column=3, sticky="w", padx=50)
+    entry_stage_high = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_stage_high.insert(0, highlighs_settings["stage"]["borders"]["high"])
+    entry_stage_high.grid(row=5, column=4)
+
+    stage_color_high_frame, entry_stage_color_high = make_color_picker(highlighs_settings_frame, highlighs_settings["stage"]["colors"]["high"])
+    stage_color_high_frame.grid(row=5, column=5)
+
+
+
+    bottom_highliths_settings_frame = tk.Frame(highlighs_settings_frame, bg="black")
+    bottom_highliths_settings_frame.grid(row=50, column=0, columnspan=6, pady=40)
+
+    save_button = blue_button(bottom_highliths_settings_frame, "Uložit\nnastavení", save_highlighs)
+    save_button.pack(side="left", padx=10)
+
+    back_button = blue_button(bottom_highliths_settings_frame, "Zpět", go_back)
+    back_button.pack(side="left", padx=10)
+
+    def get_highlighs_settings():
+        errors = []
+
+        stalls_low = validation.validate_int_range("malá fronta", entry_stalls_low.get(), 1, 1000)
+        stalls_medium = validation.validate_int_range("střední fronta", entry_stalls_medium.get(), 1, 1000)
+        stalls_high = validation.validate_int_range("velká fronta", entry_stalls_high.get(), 1, 1000)
+        stage_low = validation.validate_int_range("nízké vytížení", entry_stage_low.get(), 1, 100000)
+        stage_medium = validation.validate_int_range("střední vytížení", entry_stage_medium.get(), 1, 100000)
+        stage_high = validation.validate_int_range("vysoké vytížení", entry_stage_high.get(), 1, 100000)
+
+        for value in [stalls_low, stalls_medium, stalls_high, stage_low, stage_medium, stage_high]:
+            if isinstance(value, str):
+                errors.append(value)
+
+        if errors:
+            return errors
+
+        entry_validation = validation.validate_highligh([stalls_low, stalls_medium, stalls_high], [stage_low, stage_medium, stage_high])
+        
+        if entry_validation:
+            errors.append(entry_validation[0])
+            return errors
+
+        highlighs_settings = {
+            "stalls": {
+                "borders": {
+                    "none": 0,
+                    "low": stalls_low,
+                    "medium": stalls_medium,
+                    "high": stalls_high
+                },
+                "colors": {
+                    "used": entry_stall_is_used["color"],
+                    "low": entry_color_low["color"],
+                    "medium": entry_color_medium["color"],
+                    "high": entry_color_high["color"]
+                }
+            },
+
+            "stage": {
+                "borders": {
+                    "low": stage_low,
+                    "medium": stage_medium,
+                    "high": stage_high
+                },
+                "colors": {
+                    "low": entry_stage_color_low["color"],
+                    "medium": entry_stage_color_medium["color"],
+                    "high": entry_stage_color_high["color"]
+                }
+            }
+        }
+
+        return highlighs_settings
+
+#-------------------------------------------------------------------------OBRAZOVKA 7: Nastavení kapel-----------------------------------------------------------
+
+    bands_settings_frame = tk.Frame(root, bg="black")
+    bands_settings_frame.pack_forget()
+
+    background_label = ctk.CTkLabel(bands_settings_frame, image=bg_image, text="")
+    background_label.place(relx=0.5, rely=0.5, anchor="center")
+
+    title_label = ctk.CTkLabel(bands_settings_frame, text=" Simulace hudebního festivalu ", font=("Segoe UI", 60, "bold"), fg_color="black", text_color="white")
+    title_label.pack(padx=30, pady=30)
+
+    center_wrapper = tk.Frame(bands_settings_frame, bg="black")
+    center_wrapper.place(relx=0.5, rely=0.5, anchor="center")
+
+    tk.Label(center_wrapper, text="Nastavení kapel", font=("Arial", 25, "bold"), bg="black", fg="white").pack(pady=(10, 10))
+
+    bands_settings_buttons_frame = tk.Frame(center_wrapper, bg="black")
+    bands_settings_buttons_frame.pack()
+
+    generate_bands_button = blue_button_small(bands_settings_buttons_frame, "Vygenerovat\nlineup", open_bands_generate_settings,  14, bold=True)
+    generate_bands_button.pack(side="left", padx=10, pady=10)
+
+    load_lineup_button = blue_button_small(bands_settings_buttons_frame, "Načíst\nlineup", load_lineup, 14, bold=True)
+    load_lineup_button.pack(side="left", padx=10, pady=10)
+
+    create_lineup_button = blue_button_small(bands_settings_buttons_frame, "Vytvořit\nlineup", open_create_lineup_settings, 14, bold=True)
+    create_lineup_button.pack(side="left", padx=10, pady=10)
+
+    bottom_frame = ctk.CTkFrame(bands_settings_frame, fg_color="black", corner_radius=30)
+    bottom_frame.pack(side="bottom", pady=30)
+
+    back_button = blue_button(bottom_frame, "Zpět", go_back)
+    back_button.pack(side="left", padx=10, pady=10)
+
+    continue_after_loading_lineup_button = green_button(bottom_frame, "Pokračovat", open_editor)
+    continue_after_loading_lineup_button.pack(side="left", padx=10, pady=10)
+
+    continue_after_loading_lineup_button.configure(state="disabled")
+
+    exit_button = red_button(bottom_frame, "Zavřít", exit_app)
+    exit_button.pack(side="left", padx=10, pady=10)
+
+    
+
+
+#-------------------------------------------------------------------------OBRAZOVKA 8: Nastavení generování kapel-----------------------------------------------------------
+
+
+    bands_generate_settings_frame = tk.Frame(root, bg="black")
+    bands_generate_settings_frame.pack_forget()
+
+    background_label = ctk.CTkLabel(bands_generate_settings_frame, image=bg_image, text="")
+    background_label.place(relx=0.5, rely=0.5, anchor="center")
+    background_label.lower()
+
+    title_label = ctk.CTkLabel(bands_generate_settings_frame, text=" Simulace hudebního festivalu ", font=("Segoe UI", 60, "bold"), fg_color="black", text_color="white")
+    title_label.pack(side="top", pady=30)
+
+
+    content_frame = tk.Frame(bands_generate_settings_frame, bg="black")
+    content_frame.place(relx=0.5, rely=0.5, anchor="center")
+    
+
+    tk.Label(content_frame, text="Generování lineupu", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(20, 40))
+
+    festival_times = loading.load_settings(source.file_path_time_settings)
 
     time_fields = [
-        (2, "band_time", "  Délka vystoupení kapely:", 60, " min."),
-        (3, "headliner_time", "  Délka vystoupení headlinera:", 90, " min."),
-        (4, "signing_time", "  Délka trvání autogramiád:", 30, " min."),
-        (5, "first_show_starts", "  Čas prvního koncertu dne:", "12:00", ""),
-        (6, "last_show_ends", "  Konec posledního koncertu dne:", "23:00", "")
-    ]  
+        (1, "band_time", "  Délka vystoupení kapely:", 60, " min.", 30, 75),
+        (2, "headliner_time", "  Délka vystoupení headlinera:", 90, " min.", 60, 120),
+        (3, "signing_time", "  Délka trvání autogramiád:", 30, " min.", 10, 60),
+        (4, "num_bands", "  Počet kapel na den:", 8, "", 5, 12),
+        (5, "first_show_starts", "  Čas prvního koncertu dne:", "12:00", "", "10:00", "15:00"),
+        (6, "last_show_ends", "  Konec posledního koncertu dne:", "23:00", "", "20:00", "02:00")
+    ]
 
+    for row, key, label, default, unit, min_value, max_value in time_fields:
 
-    for row, key, label, default, unit in time_fields:
-
-        tk.Label(times_settings_frame, text=label, **label_style).grid(
+        tk.Label(content_frame, text=label, **label_style).grid(
             row=row, column=0, pady=10, sticky="w"
         )
 
-        entry = tk.Entry(times_settings_frame, **entry_style2)
+        entry = tk.Entry(content_frame, **entry_style2)
         entry.grid(row=row, column=1, pady=10)
-
         entry.insert(0, festival_times.get(key, default))
 
-        festival_times[key] = entry
+        festival_times[key] = [entry, label[2:-1].lower(), min_value, max_value]
 
         if unit:
-            tk.Label(times_settings_frame, text=f"{unit}  ", **label_style).grid(
+            tk.Label(content_frame, text=f"{unit}  ", **label_style).grid(
                 row=row, column=2, pady=10, sticky="w"
             )
 
     def get_times():
-        result = {}
+        times = {}
+        errors = []
+        i = 0
 
         for key, entry in festival_times.items():
-            result[key] = entry.get()
+            i += 1
 
-        return result
+            if i <= 4:
+                value = validation.validate_int_range(entry[1], entry[0].get(), entry[2], entry[3])
+                if isinstance(value, int):
+                    times[key] = value
+                else:
+                    errors.append(value)
+            else:
+                value = validation.validate_time_string(entry[1], entry[0].get(), entry[2], entry[3])
+                if len(value) <= 5:
+                    times[key] = value
+                else:
+                    errors.append(value)
 
-    bottom_settings_times_frame = tk.Frame(times_settings_frame, bg="black") 
-    bottom_settings_times_frame.grid(row=7, column=0, columnspan=6, pady=40) 
+        return times if not errors else errors
 
-    save_default_times = blue_button(bottom_settings_times_frame, "Uložit\nnastavení", save_time_settings)
+    bottom_settings_times_frame = tk.Frame(content_frame, bg="black")
+    bottom_settings_times_frame.grid(row=7, column=0, columnspan=6, pady=40)
+
+    save_default_times = blue_button_small(bottom_settings_times_frame, "Uložit\nnastavení", save_time_settings, 14, True)
     save_default_times.pack(side="left", padx=10)
 
-    back_button = blue_button(bottom_settings_times_frame, "Zpět", go_back) 
-    back_button.pack(side="left", padx=10)
+    generate_lineup_button = blue_button_small(bottom_settings_times_frame, "Vygenerovat", generate_lineup, 14, True)
+    generate_lineup_button.pack(side="left", padx=10)
 
 
-#-------------------------------------------------------------------------OBRAZOVKA7: Editor-----------------------------------------------------------
+    bottom_frame = ctk.CTkFrame(bands_generate_settings_frame, fg_color="black", corner_radius=30)
+    bottom_frame.pack(side="bottom", pady=30)
+
+    back_button = blue_button(bottom_frame, "Zpět", go_back)
+    back_button.pack(side="left", padx=10, pady=10)
+
+    continue_button_generate = green_button(bottom_frame, "Pokračovat", open_editor)
+    continue_button_generate.pack(side="left", padx=10, pady=10)
+    continue_button_generate.configure(state="disabled")
+
+    exit_button = red_button(bottom_frame, "Zavřít", exit_app)
+    exit_button.pack(side="left", padx=10, pady=10)
+
+    
+
+#-------------------------------------------------------------------------OBRAZOVKA 9: Vytvoření lineupu-----------------------------------------------------------
+
+    lineup_frame = tk.Frame(root, bg="black")
+    lineup_frame.pack_forget()
+
+    def create_lineup_settings(num_days, lineup_frame):
+
+        for widget in lineup_frame.winfo_children():
+            widget.destroy()
+        
+        lineup_frame.pack(fill="both", expand=True)
+
+        MAX_BANDS = 12
+
+        style = ttk.Style()
+
+        style.theme_use("clam")
+
+        style.configure(
+            "TNotebook.Tab",
+            font=("Segoe UI", 16, "bold"),   
+            foreground="white",                           
+        )
+
+        style.map(
+            "TNotebook.Tab",
+            background=[
+                ("selected", "#EBFF15"),     
+                ("!selected", "#fcfcfc")     
+            ],
+            foreground=[
+                ("selected", "black"),      
+                ("!selected", "black")    
+            ]
+        )
+
+        bg_label = ctk.CTkLabel(lineup_frame, image=bg_image, text="")
+        bg_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        top_frame = tk.Frame(lineup_frame, bg="black")
+        top_frame.pack(side="top", pady=30)
+
+        title = ctk.CTkLabel(top_frame, text=" Simulace hudebního festivalu ", font=("Segoe UI", 50, "bold"), fg_color="black", text_color="white")
+        title.pack()
+
+        center_frame = tk.Frame(lineup_frame, bg="black")
+        center_frame.pack(expand=True, pady=20)
+
+        notebook_wrapper = tk.Frame(center_frame, bg="black")
+        notebook_wrapper.pack(anchor="center")
+
+        notebook = ttk.Notebook(notebook_wrapper, width=1270)
+        notebook.pack()
+
+        lineup_entries = {}
+
+        for day in range(1, num_days + 1):
+
+            tab = tk.Frame(notebook, bg="black")
+            notebook.add(tab, text=f"Den {day}")
+
+            lineup_entries[day] = []
+
+            headers = ["Název Kapely", "Čas začátku koncertu", "Čas konce koncertu", "Čas začátku autogramiády", "Čas konce autogramiády"]
+
+            for col, h in enumerate(headers):
+                tk.Label(tab, text=h, bg="black", fg="white", font=("Arial", 16, "bold")).grid(
+                    row=0, column=col, padx=10, pady=10
+                )
+
+            for row in range(1, MAX_BANDS + 1):
+                row_entries = []
+
+                for col in range(5):
+                    if col == 0:
+                        e = tk.Entry(tab, width=20, font=("Segoe UI", 14), justify="center")
+                        e.grid(row=row, column=col, padx=10, pady=5)
+                    else:
+                        e = tk.Entry(tab, width=8, font=("Segoe UI", 14), justify="center")
+                        e.grid(row=row, column=col, padx=10, pady=5)
+                    row_entries.append(e)
+
+                lineup_entries[day].append(row_entries)
+
+        bottom_frame = tk.Frame(lineup_frame, bg="black")
+        bottom_frame.pack(side="bottom", pady=30)
+
+        def save_lineup():
+            result = []
+            errors = []
+
+            for day, rows in lineup_entries.items():
+                day_lineup = []
+                band_index = 1
+
+                for row in rows:
+                    band_name = row[0].get().strip()
+
+                    if band_name == "":
+                        continue
+                    
+                    else:
+                        start_play = validation.validate_time_string(headers[1], row[1].get().strip(), "00:00", "23:59")
+                        
+                        if "Hodnota" in start_play and start_play not in errors:
+                            errors.append(start_play)
+
+                        end_play = validation.validate_time_string(headers[2], row[2].get().strip(), "00:00", "23:59")
+                        
+                        if "Hodnota" in end_play and end_play not in errors:
+                            errors.append(end_play)
+                        
+                        start_sign = validation.validate_time_string(headers[3], row[3].get().strip(), "00:00", "23:59")
+                        
+                        if "Hodnota" in start_sign and start_sign not in errors:
+                            errors.append(start_sign)
+                        
+                        end_sign = validation.validate_time_string(headers[4], row[4].get().strip(), "00:00", "23:59")
+                        
+                        if "Hodnota" in end_sign and end_sign not in errors:
+                            errors.append(end_sign)
+                        
+                        if len(errors) >= 4:
+                            show_message(errors)
+                            return
+                    
+                    if errors:
+                        show_message(errors)
+                        return
+
+                    else:
+
+                        day_lineup.append({
+                            "band_name": band_name,
+                            "start_playing_time": start_play,
+                            "end_playing_time": end_play,
+                            "start_signing_session": start_sign,
+                            "end_signing_session": end_sign,
+                            "popularity": min((band_index * 10), 100) 
+                        }) 
+
+                        band_index += 1
+
+                day_errors = validation.check_time_conflicts(day_lineup)
+
+                if day_errors:
+                    show_message(day_errors)
+                    return
+                
+                else:
+                    result.append(day_lineup)
+
+            saving.save_data_dialog(result)
+            show_message("Lineup byl úspěšně vytvořen, můžete pokračovat")
+            continue_after_creation_lineup_button.configure(state="normal")
+
+        save_btn = blue_button(bottom_frame, "Uložit\nlineup", save_lineup)
+        save_btn.pack(side="left", padx=10, pady=10)
+
+        back_btn = blue_button(bottom_frame, "Zpět", go_back)
+        back_btn.pack(side="left", padx=10, pady=10)
+        
+        continue_after_creation_lineup_button = green_button(bottom_frame, "Pokračovat", open_editor)
+        continue_after_creation_lineup_button.pack(side="left", padx=10, pady=10)
+        continue_after_creation_lineup_button.configure(state="disabled")
+
+        exit_btn = red_button(bottom_frame, "Zavřít", exit_app)
+        exit_btn.pack(side="left", padx=10, pady=10)
+
+#-------------------------------------------------------------------------OBRAZOVKA10: Editor-----------------------------------------------------------
 
     editor_frame = tk.Frame(root, bg="black")
 
     background_label = ctk.CTkLabel(editor_frame, image=bg_image, text="")
     background_label.place(relx=0.5, rely=0.5, anchor="center")
 
-    title = ctk.CTkLabel(editor_frame, text="Editor festivalového areálu",font=("Arial", 40, "bold"),text_color="#ffffff")
-    title.pack(pady=20)
+    title_frame = tk.Frame(editor_frame, bg="black")
+    title_frame.pack(side="top", pady="10")
 
+    title = ctk.CTkLabel(title_frame, text="Editor festivalového areálu",font=("Arial", 40, "bold"),text_color="#ffffff")
+    title.pack(pady=10, padx=10)
 
+    title_simulation_mode = ctk.CTkLabel(title_frame, text="Simulace",font=("Arial", 40, "bold"),text_color="#ffffff")
+    title_simulation_mode.pack_forget()
+    
     content_frame = tk.Frame(editor_frame, bg="black")
     content_frame.pack(fill="both", padx=50, pady=10)
 
@@ -1115,7 +2155,6 @@ def run_app():
     modes_frame.pack(pady=5)
 
     # Funkce pro výběr režimu
-    current_mode = None
 
     def select_mode(mode_name):
         global current_mode
@@ -1185,16 +2224,34 @@ def run_app():
 
 #-------------------------------------------------------------------------------EDITOR - SIMULATION MODE---------------------------------------------------------------------------------------------------
 
+    def update_day_time_labels(day, time):
+        current_day_label.config(text=f"Den: {day}")
+        current_time_label.config(text=f"Aktuální čas: {time}")
+
+    left_simulation_container = tk.Frame(content_frame, bg="black")
     left_simulation_container = tk.Frame(content_frame, bg="black")
     left_simulation_container.pack_forget()
 
-    frame_up_simulation = tk.Frame(left_simulation_container, width=400, height=430, bg="white", bd=2, relief="ridge")
+
+    frame_day_time = tk.Frame(left_simulation_container, width=400, height=50, bg="white", bd=2, relief="ridge")
+    frame_day_time.pack(fill="x")
+
+    inner = tk.Frame(frame_day_time, bg="white")
+    inner.pack(anchor="center", pady=5)  
+
+    current_day_label = tk.Label(inner, text=f"Den: {actual_day}", font=("Arial", 16, "bold"), bg="white", fg="black")
+    current_day_label.pack(side="left", padx=10)
+
+    current_time_label = tk.Label(inner, text=f"Aktuální čas: {actual_time}", font=("Arial", 16, "bold"), bg="white", fg="black")
+    current_time_label.pack(side="left", padx=10)
+
+    frame_up_simulation = tk.Frame(left_simulation_container, width=400, height=386, bg="white", bd=2, relief="ridge")
     frame_up_simulation.pack_propagate(False)
     frame_up_simulation.pack(fill="x")
 
-    tk.Label(frame_up_simulation, text="Detaily o stánku: ", font=("Arial", 15, "bold"), bg="white", fg="black").pack(pady=5)
-    
-    stall_log_box = ctk.CTkTextbox(frame_up_simulation, width=380, height=370, text_color="black", fg_color="#C0C0C0", font=("Arial", 20))
+    tk.Label(frame_up_simulation, text="Detaily o stánku:", font=("Arial", 15, "bold"), bg="white", fg="black").pack(pady=5)
+
+    stall_log_box = tk.Text(frame_up_simulation, fg="black", bg="#C0C0C0", font=("Arial", 15), wrap="word")
     stall_log_box.pack()
     stall_log_box.configure(state="disabled")
 
@@ -1203,23 +2260,38 @@ def run_app():
     frame_down_simulation.pack(fill="x")
 
     tk.Label(frame_down_simulation, text="Průběh festivalu:", font=("Arial", 15, "bold"), bg="white", fg="black").pack(pady=5)
-    
-    messages_log_box = ctk.CTkTextbox(frame_down_simulation, width=380, height=370, text_color="black", fg_color="#C0C0C0", font=("Arial", 14))
+
+    messages_log_box = tk.Text(frame_down_simulation, fg="black", bg="#C0C0C0", font=("Arial", 14), wrap="word",)
     messages_log_box.pack()
     messages_log_box.configure(state="disabled")
 
+    stall_log_box.tag_config("bold", font=("Arial", 15, "bold"))
+    stall_log_box.tag_config("indent", lmargin1=20, lmargin2=20)
+    messages_log_box.tag_config("bold", font=("Arial", 14, "bold"))
+    messages_log_box.tag_config("indent", lmargin1=20, lmargin2=20)
+    
     #SIMULATION BUTTONS
 
     simulation_buttons_frame = tk.Frame(editor_frame, bg="black")
     simulation_buttons_frame.pack_forget()
 
+    # AUTOMATICKÁ SIMULACE
+
+    automatic_simulation_buttons_frame = tk.Frame(simulation_buttons_frame, bg="black")
+    automatic_simulation_buttons_frame.pack(side="left", padx=30)
+
+    automatic_simulation_label = ctk.CTkLabel(automatic_simulation_buttons_frame, text="Automatická simulace", font=("Arial", 20, "bold"), text_color="white", width=50)
+    automatic_simulation_label.pack(side="top", pady=8)
+
+    automatic_simulation_start_button = green_button_small(automatic_simulation_buttons_frame, "▶", automatic_simulation)
+    automatic_simulation_start_button.pack(anchor="center", pady=10)
 
     # ČÁST PLYNULÉ SIMULACE
 
     smooth_simulation_buttons_frame = tk.Frame(simulation_buttons_frame, bg="black")
     smooth_simulation_buttons_frame.pack(side="left", padx=30)
 
-    smooth_simulation_label = ctk.CTkLabel(smooth_simulation_buttons_frame, text="Automatická simulace", font=("Arial", 20, "bold"), text_color="white", width=50)
+    smooth_simulation_label = ctk.CTkLabel(smooth_simulation_buttons_frame, text="Plynulá simulace", font=("Arial", 20, "bold"), text_color="white", width=50)
     smooth_simulation_label.pack(side="top", pady=8)
 
     smooth_simulation_start_button = green_button_small(smooth_simulation_buttons_frame, "▶", start_smooth_simulation)
@@ -1233,35 +2305,53 @@ def run_app():
     def increase():
         nonlocal value
         value += 1
-        jump_label.configure(text=str(value))
+        jump_entry.delete(0, "end")
+        jump_entry.insert(0, str(value))
 
     def decrease():
         nonlocal value
 
         if value > 1:
             value -= 1
-            jump_label.configure(text=str(value))
+            jump_entry.delete(0, "end")
+            jump_entry.insert(0, str(value))
+
+    def on_jump_entry_change(event=None):
+        nonlocal value
+        try:
+            new_val = int(jump_entry.get())
+            if new_val >= 1:
+                value = new_val
+            else:
+                jump_entry.delete(0, "end")
+                jump_entry.insert(0, str(value))
+
+        except ValueError:
+            show_message("Zadaná hodnota pro posun času musí být celé číslo.")
+            jump_entry.delete(0, "end")
+            jump_entry.insert(0, str(value))
 
     simulation_counter_frame = tk.Frame(simulation_buttons_frame, bg="black")
     simulation_counter_frame.pack(side="left")
 
-    jump_label_text = ctk.CTkLabel(simulation_counter_frame, text="Posunout simulaci o čas", font=("Arial", 20, "bold"), text_color="white", width=50)
+    jump_label_text = ctk.CTkLabel(simulation_counter_frame, text="Posunout simulaci o čas (min)", font=("Arial", 20, "bold"), text_color="white", width=50)
     jump_label_text.pack(side="top", pady=8)
 
     minus_button = blue_button_small(simulation_counter_frame, "-", decrease)
     minus_button.pack(side="left", pady=10)
 
-    jump_label = ctk.CTkLabel(simulation_counter_frame, text=str(value), font=("Arial", 20, "bold"), text_color="white", width=50)
-    jump_label.pack(side="left")
+    jump_entry = tk.Entry(simulation_counter_frame, **entry_style2)
+    value = 1
+    jump_entry.insert(0, str(value))
+    jump_entry.pack(side="left", padx=10)
+    jump_entry.bind("<FocusOut>", on_jump_entry_change)
+    jump_entry.bind("<Return>", on_jump_entry_change)
 
     plus_button = blue_button_small(simulation_counter_frame, "+", increase)
     plus_button.pack(side="left", pady=10)
 
     move_forward_by_time_button = green_button_small(simulation_counter_frame, "▶", move_forward_by_time)
     move_forward_by_time_button.pack(side="left", padx=10, pady=10)
-
-    #stop_simulation_button = red_button_small(stop_simulation_frame, "Ukončit", stop_simulation)
-    #stop_simulation_button.pack(side="left", padx=30)
 
     save_simulation_state_button = blue_button(simulation_buttons_frame, "Uložit stav\nsimulace", save_actual_state, 20)
     save_simulation_state_button.pack(side="left", padx=[50,0])
@@ -1273,24 +2363,27 @@ def run_app():
     def create_zone_stats_labels():
 
         for zone in zones_data.values():
-            text = "Návštěvníků v zóně: 0"
-            x_center = zone["left"]
-            y_label = zone["top"] - 8
+            if zone:
+                text = "Návštěvníků v zóně: 0"
+                x_center = zone["left"]
+                y_label = zone["top"] - 8
 
-            label_id = canvas.create_text(x_center, y_label, text=text, fill="black", anchor="w", font=("Arial", 8, "bold"))
-            zone["num_visitors_label_id"] = label_id
+                label_id = canvas.create_text(x_center, y_label, text=text, fill="black", anchor="w", font=("Arial", 8, "bold"))
+                zone["num_visitors_label_id"] = label_id
 
     def delete_zone_stats_labels():
 
         for zone in zones_data.values():
-            if "num_visitors_label_id" in zone:
-                canvas.delete(zone["num_visitors_label_id"])
-                del zone["num_visitors_label_id"]
+            if zone:
+                if "num_visitors_label_id" in zone:
+                    canvas.delete(zone["num_visitors_label_id"])
+                    del zone["num_visitors_label_id"]
+
 
 #--------------------------------------------------------------------------------KÓDY EDITORU-------------------------------------------------------------
     
     def view_changes(controller):
-
+        settings = loading.load_settings(source.file_path_highlighs)
         simulation_state = controller.get_simulation_state()
         stalls = controller.get_festival().get_stalls()
         location_map = {
@@ -1302,22 +2395,18 @@ def run_app():
             "Spawn zóna": "SPAWN_ZONE"
         }
 
-        # aktualizace počtu lidí v zónách
         for zone, zone_data in zones_data.items():
             count = simulation_state["zones"][location_map[zone]]["num_people_in_zone"]
             update_zone_visitor_count(zone_data, count)
 
-        # aktualizace stánků
         for zone_name, zone_stalls in stalls.items():
             for stall in zone_stalls:
 
                 stall_name = stall.get_name()
                 stall_id = stall.get_id()
 
-                # seznam stánků stejného typu
                 stall_list = simulation_state["zones"][zone_name]["stalls"][stall_name]
 
-                # najdeme správný stánek podle ID
                 stall_stats = None
                 for s in stall_list:
                     if s["id"] == stall_id:
@@ -1331,51 +2420,86 @@ def run_app():
                 canvas_ids = stall.get_canvas_ids()
                 item = canvas_ids[1]
 
-                # barvení podle typu stánku
+
                 if stall_name == "standing_at_stage":
-                    capacity = stall.get_capacity()
 
-                    if stall_stats["num_people_served"] < capacity / 3:
-                        canvas.itemconfig(item, fill="")
-
-                    elif stall_stats["num_people_served"] < capacity / 2:
-                        canvas.itemconfig(item, fill="#CDDC39")
-
-                    elif stall_stats["num_people_served"] <= capacity / 1.2:
-                        canvas.itemconfig(item, fill="#FF9800")
+                    if stall_stats["num_people_served"] >= settings["stage"]["borders"]["high"]:
+                        border = "high"
+                    
+                    elif stall_stats["num_people_served"] >= settings["stage"]["borders"]["medium"]:
+                        border = "medium"
+                    
+                    elif stall_stats["num_people_served"] >= settings["stage"]["borders"]["low"]:
+                        border = "low"
 
                     else:
-                        canvas.itemconfig(item, fill="red")
+                        border = None
+
+                    if border:
+                        canvas.itemconfig(item, fill=settings["stage"]["colors"][border])
+
+                    else:
+                        canvas.itemconfig(item, fill="")
 
                 elif stall_name != "stage":
-                    if stall_stats["num_people_in_queue"] < 1:
-                        canvas.itemconfig(item, fill="")
 
-                    elif stall_stats["num_people_in_queue"] < 5:
-                        canvas.itemconfig(item, fill="#CDDC39")
+                    if stall_stats["num_people_in_queue"] >= settings["stalls"]["borders"]["high"]:
+                        border = "high"
+                    
+                    elif stall_stats["num_people_in_queue"] >= settings["stalls"]["borders"]["medium"]:
+                        border = "medium"
+                    
+                    elif stall_stats["num_people_in_queue"] >= settings["stalls"]["borders"]["low"]:
+                        border = "low"
 
-                    elif stall_stats["num_people_in_queue"] <= 10:
-                        canvas.itemconfig(item, fill="#FF9800")
+                    elif stall_stats["num_people_served"] > 0:
+                        border = "used"
 
                     else:
-                        canvas.itemconfig(item, fill="red")
+                        border = None
+                    
+                    if border:
+                        canvas.itemconfig(item, fill=settings["stalls"]["colors"][border])
 
+                    else:
+                        canvas.itemconfig(item, fill="")
+
+    def uncolor_objects(OBJECT_IMAGES):
+        stalls = controller.get_festival().get_stalls()
+
+        for zone_name, zone_stalls in stalls.items():
+            for stall in zone_stalls:
+                canvas_ids = stall.get_canvas_ids()
+                item = canvas_ids[1]
+
+                if stall.get_name() != "stage":
+                    canvas.itemconfig(item, fill="")
+
+                stall_name = stall.get_name()
+
+                if stall_name not in source.STALLS_WITH_NO_SCHEDULE:
+                    stall_cz_name = stall.get_cz_name()
+
+                    if stall_cz_name == "red bull stánek":
+                        parts = stall_cz_name.split(" ")
+                        parts[0] = parts[0].capitalize()
+                        parts[1] = parts[1].capitalize()
+                        stall_cz_name = " ".join(parts)
+                    else:
+                        stall_cz_name = stall_cz_name[0].upper() + stall_cz_name[1:]
+
+                    img_id = canvas_ids[2]
+                    img_color = OBJECT_IMAGES[stall_cz_name][0]
+                    canvas.itemconfig(img_id, image=img_color)
 
     def update_zone_visitor_count(zone, count):
-        label_id = zone.get("num_visitors_label_id")
-        canvas.itemconfig(label_id, text=f"Počet návštěvníků v zóně: {count}")
+        if zone:
+            label_id = zone.get("num_visitors_label_id")
+            canvas.itemconfig(label_id, text=f"Návštěvníků v zóně: {count}")
 
     # Funkce pro vkládání objektů
     def place_object(event):
         global current_object, current_zone, zones_data, current_mode
-
-        if current_mode != "add":
-            print("Zony a objekty lze přidávat pouze v režimu +")
-            return
-
-        if current_zone is None or current_object is None:
-            print("chyba: není vybrána zóna nebo objekt")
-            return
 
         x, y = event.x, event.y
 
@@ -1396,7 +2520,7 @@ def run_app():
             instance = fest_zone
 
         elif instance is None:
-            print("chyba: objekt musí být uvnitř existující zóny")
+            show_message("Objekt musí být umístěn do správné zóny.")
             return
 
         # vytvoření objektu
@@ -1525,13 +2649,20 @@ def run_app():
 
         # 2) pokud je vybraný objekt → umisťujeme objekt
         if current_object is not None:
-            place_object(event)
+
+            if current_object == "Stan na autogramiády" and is_object_in_zone(zones_data, current_zone, current_object):
+                show_message("Stan na autogramiády může být na festivalu pouze jednou.")
+            elif current_object == "Podium" and is_object_in_zone(zones_data, current_zone, current_object):
+                show_message("Pódium může být na festivalu pouze jednou.")
+            else:
+                place_object(event)
+            
             return
 
         # 3) kontrola, zda zóna už existuje (jen jedna instance)
         zone_info = zones_data[current_zone]
         if zone_info:
-            print(f"Zóna '{current_zone}' může být pouze jedna — nelze přidat další.")
+            show_message(f"Zóna {current_zone} již existuje")
             return
 
         # 4) začínáme kreslit novou zónu
@@ -1578,6 +2709,7 @@ def run_app():
         # 3) zóna
         zone = find_clicked_zone(event)
         if zone:
+
             # stejné jako teď, jen v samostatné funkci
             handle_zone_selection(zone, event)
             return
@@ -1588,17 +2720,16 @@ def run_app():
     def clear_selection():
         global selected_object, selected_zone_instance, selected_line
         
-        # odznačit objekt
+    
         if selected_object:
             unhighlight_object(selected_object)
             selected_object = None
 
-        # odznačit zónu
+    
         if selected_zone_instance:
             unhighlight_zone(selected_zone_instance)
             selected_zone_instance = None
 
-        # odznačit čáru
         if selected_line:
             canvas.itemconfig(selected_line["id"], width=2)
             selected_line = None
@@ -1609,25 +2740,28 @@ def run_app():
         global selected_zone_instance, selected_object, selected_line
         global is_dragging_zone, last_x, last_y
 
-        # odznačit objekt
+        border_objects = ["Louka na stanování", "Toitoiky", "Stání u podia"]
+
         if selected_object:
-            canvas.itemconfig(selected_object["canvas_ids"][1], outline="", width=1)
+
+            if selected_object["object"] in border_objects:
+                canvas.itemconfig(selected_object["canvas_ids"][1], outline="black", width=1)
+
+            else:
+                canvas.itemconfig(selected_object["canvas_ids"][1], outline="", width=1)
+
             selected_object = None
 
-        # odznačit čáru
         if selected_line:
             canvas.itemconfig(selected_line["id"], width=2)
             selected_line = None
 
-        # pokud klikám na jinou zónu, odznačím starou
         if selected_zone_instance and selected_zone_instance != zone:
             canvas.itemconfig(selected_zone_instance["rect_id"], outline="blue", width=3)
 
-        # označit novou zónu
-        if selected_zone_instance != zone:
-            selected_zone_instance = zone
-            canvas.itemconfig(zone["rect_id"], outline="red", width=4)
-            print(f"Označená zóna: {zone["type"]}")
+        selected_zone_instance = zone
+        canvas.itemconfig(zone["rect_id"], outline="red", width=4)
+        print(f"Označená zóna: {zone["type"]}")
 
         # zjištění resize směru
         resize_info = get_resize_direction(zone, event.x, event.y)
@@ -1703,7 +2837,23 @@ def run_app():
 
         canvas.itemconfig(obj["canvas_ids"][1], outline="red", width=3)
 
+    def is_object_in_zone(zones_data, zone_name, object_name):
+        zone = zones_data.get(zone_name)
+
+        if not zone:
+            return False
+
+        for obj in zone.get("objects", []):
+            if obj["object"] == object_name:
+                return True
+            
+        return False
+
     def unhighlight_object(obj):
+
+        if not obj:
+            return 
+                
         if isinstance(obj, list):
             obj = obj[0]
 
@@ -1790,6 +2940,7 @@ def run_app():
 
     def connect_entry_to_zone(vstup_obj, target_zone):
         """Vstup → zóna."""
+
         vstup_zone = None
 
         # najdeme zónu, ve které je tento vstup umístěný
@@ -1797,7 +2948,7 @@ def run_app():
             if not inst:
                 continue
 
-            if vstup_obj in inst.get("objects", []):
+            if any(obj["id"] == vstup_obj["id"] for obj in inst["objects"]):
                 vstup_zone = inst
                 break
 
@@ -1805,6 +2956,14 @@ def run_app():
             print("Špatný klik, vstup → zóna selhalo")
             return
 
+        for line in vstup_zone.get("lines", []):
+            if line["other_zone"].get("entry") and line["other_zone"]["entry"]["id"] == vstup_obj["id"]:
+                return
+
+        for line in target_zone.get("lines", []):
+            if line["other_zone"].get("entry") and line["other_zone"]["entry"]["id"] == vstup_obj["id"]:
+                return
+            
         x1, y1 = vstup_obj["x"], vstup_obj["y"]
         x2, y2 = center_of_closest_edge(target_zone, x1, y1)
 
@@ -1816,7 +2975,7 @@ def run_app():
             "id": line_id,
             "other_zone": {
                 "type": target_zone["type"],
-                "entry": {"id": vstup_obj["id"], "x": x1, "y": y1}
+                "entry": vstup_obj
             }
         })
 
@@ -1824,13 +2983,14 @@ def run_app():
             "id": line_id,
             "other_zone": {
                 "type": vstup_zone["type"],
-                "entry": {"id": vstup_obj["id"], "x": x1, "y": y1}
+                "entry": vstup_obj
             }
         })
 
 
     def connect_zone_to_entry(start_zone, vstup_obj):
         """Zóna → vstup."""
+
         vstup_zone = None
 
         # najdeme zónu, ve které je tento vstup umístěný
@@ -1838,13 +2998,21 @@ def run_app():
             if not inst:
                 continue
 
-            if vstup_obj in inst.get("objects", []):
+            if any(obj["id"] == vstup_obj["id"] for obj in inst["objects"]):
                 vstup_zone = inst
                 break
 
         if not vstup_zone:
             print("Špatný klik, zóna → vstup selhalo")
             return
+        
+        for line in start_zone.get("lines", []):
+            if line["other_zone"].get("entry") and line["other_zone"]["entry"]["id"] == vstup_obj["id"]:
+                return
+
+        for line in vstup_zone.get("lines", []):
+            if line["other_zone"].get("entry") and line["other_zone"]["entry"]["id"] == vstup_obj["id"]:
+                return
 
         x2, y2 = vstup_obj["x"], vstup_obj["y"]
         x1, y1 = center_of_closest_edge(start_zone, x2, y2)
@@ -1856,7 +3024,7 @@ def run_app():
             "id": line_id,
             "other_zone": {
                 "type": vstup_zone["type"],
-                "entry": {"id": vstup_obj["id"], "x": x2, "y": y2}
+                "entry": vstup_obj
             }
         })
 
@@ -1864,14 +3032,14 @@ def run_app():
             "id": line_id,
             "other_zone": {
                 "type": start_zone["type"],
-                "entry": {"id": vstup_obj["id"], "x": x2, "y": y2}
+                "entry": vstup_obj
             }
         })
 
 
     def connect_zone_to_zone(z1, z2):
         """Zóna → zóna."""
-        # pokud už existuje spojení, nic nedělej
+    
         for line in z1.get("lines", []):
             if line["other_zone"]["type"] == z2["type"]:
                 return
@@ -1943,94 +3111,170 @@ def run_app():
     
 
     def handle_inspect_click(event, controller):
-        global current_object
+        global selected_object
 
         obj = find_clicked_object(event)
         zone = find_clicked_zone(event)
-        zone = zone["type"].lower()
+        zone = zone["type"]
         zone = source.Locations(zone).name
-
+        festival = controller.get_festival()
+        env = controller.get_env()
         if not obj:
             return
         
         if isinstance(obj, list):
             obj = obj[0]
 
-        if current_object != obj:       
+        if selected_object != obj:       
             highlight_object(obj)
 
-            if current_object:
-                unhighlight_object(current_object)
+            if selected_object:
+                unhighlight_object(selected_object)
 
-            current_object = obj
+            selected_object = obj
 
         sim_state = controller.get_simulation_state()
+        obj_cz_name = obj["object"].lower()
+        stall_name = source.STALL_CZ_TO_EN[obj_cz_name]
+        cz_name = obj_cz_name[0].upper() + obj_cz_name[1:]
         stalls_data = sim_state["zones"][zone]["stalls"]
+        stalls_data = stalls_data[stall_name]
 
         data = None
 
-        for stall_name, stall_list in stalls_data.items():
-
-            for stall_data in stall_list:
-                if stall_data["id"] == obj["id"]:
-                    data = stall_data
-                    break
-
-            if data:
+        for stall in stalls_data:
+            if stall["id"] == obj["id"]:
+                data = stall
                 break
-        
+            
         if not data:
-            add_log("ERROR: Nenalezen objekt na který se kliklo v inspect režimu!")
             return
-        
-        cz_name = data["cz_name"][0].upper() + data["cz_name"][1:]
 
         stall_log_box.configure(state="normal")
         stall_log_box.delete("1.0", "end")
-        stall_log_box.insert("end", f"ID stánku: {data['id']}\n")
-        stall_log_box.insert("end", f"Název stánku: {cz_name}\n")
 
-        if stall_name == "stage":
+        stall_log_box.insert("end", "\n")
+        insert_in_box(stall_log_box, "ID stánku: ", f"{data['id']}\n")
+        insert_in_box(stall_log_box, "Název stánku: ", f"{cz_name}\n")
 
-            band = controller.get_festival().get_playing_band()
-            if band:
-                band = band["band_name"]
-                stall_log_box.insert("end", f"Právě hraje kapela: {band}\n")
+        if stall_name not in source.STALLS_WITH_NO_SCHEDULE:
+            insert_in_box(stall_log_box, "Otevírací doba stánku: ", f"{data["opening_hours"]["open"]} - {data["opening_hours"]["close"]}\n")
+
+            if stall["opend"]:
+                insert_in_box(stall_log_box, "Stánek v provozu: ", "Ano\n")
             else:
-                stall_log_box.insert("end", f"V tuto chvíli žádná kapela nehraje\n")
+                insert_in_box(stall_log_box, "Stánek v provozu: ", "Ne\n")
 
-            stall_log_box.configure(state="disabled")
-            return 
+        
+        if stall_name == "stage":
+            
+            band = festival.get_playing_band()
+            
+            if band:
+                start_band_playing = time_converter.get_real_time(band["start_playing_time"])
+                end_band_playing = time_converter.get_real_time(band["end_playing_time"])
+
+                stall_log_box.insert("end", "\n")
+                stall_log_box.insert("end", f"Právě hraje kapela {band["band_name"]}, a to od {start_band_playing} do {end_band_playing}\n", "indent")
+            else:
+                lineup = festival.get_lineup()
+                next_band = bands.next_band(lineup, env=env)
+
+                stall_log_box.insert("end", "\n")
+                stall_log_box.insert("end", f"V tuto chvíli žádná kapela nehraje. ", "indent")
+
+                if next_band:
+                    stall_log_box.insert("end", f"Následující koncert má kapela {next_band["band_name"]} a bude hrát od {time_converter.get_real_time(next_band["start_playing_time"])} do {time_converter.get_real_time(next_band["end_playing_time"])}\n", "indent")
+                else:
+                    stall_log_box.insert("end", f"Všechny koncerty již byly odehrány a žádná kapela už na festivalu nevystoupí.\n", "indent")
 
         elif stall_name == "standing_at_stage":
-            stall_log_box.insert("end", f"Počet návštěvníků na koncertě: {data["num_people_served"]}\n")
-            stall_log_box.insert("end", f"Počet návštěvníků v prvních řádách: {data["num_people_in_first_lines"]} \n")
-            stall_log_box.insert("end", f"Počet návštěvníků uprostřed plochy: {data["num_people_in_the_middle"]} \n")
-            stall_log_box.insert("end", f"Počet návštěvníků vzadu: {data["num_people_in_back"]} \n")
-            stall_log_box.insert("end", f"Kapacita stánku: {data['capacity']}\n")
-            stall_log_box.configure(state="disabled")
-            return 
+            insert_in_box(stall_log_box, "Návštěvníků na koncertě: ", f"{data['num_people_on_show']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků v prvních řádách: ", f"{data['num_people_in_first_lines']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků uprostřed plochy: ", f"{data['num_people_in_the_middle']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků vzadu: ", f"{data['num_people_in_back']}\n")
+            insert_in_box(stall_log_box, "Kapacita stání u pódia: ", f"{data['capacity']}\n")
         
+        elif stall_name == "tables":
+            insert_in_box(stall_log_box, "Návštěvníků sedících u stolu: ", f"{data['num_people_served']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků čekajících na volný stůl: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celkový počet míst k sezení: ", f"{data['capacity']}\n")
+
+        elif stall_name == "toitoi":
+            insert_in_box(stall_log_box, "Návštěvníků na záchodě: ", f"{data['num_people_served']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků čekajících na volný záchod: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celkový počet záchodů: ", f"{data['capacity']}\n")
+
+        elif stall_name == "shower":
+            insert_in_box(stall_log_box, "Návštěvníků ve sprše: ", f"{data['num_people_served']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků čekajících na volnou sprchu: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celková kapacita sprch: ", f"{data['capacity']}\n")
+
+        elif stall_name == "charging_stall":
+            insert_in_box(stall_log_box, "Návštěvníků obsluhováno: ", f"{data['num_people_served']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků ve frontě: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celková kapacita obsluhy stánku: ", f"{data['capacity']}\n")
+            insert_in_box(stall_log_box, "Počet telefonů na nabíjení: ", f"{data["phones_currently_charging"]}\n")
+            insert_in_box(stall_log_box, "Počet volných pozic na nabíjení: ", f"{data["phones_free_positions"]}\n")
+            insert_in_box(stall_log_box, "Celková kapacita telefonů: ", f"{data["phones_capacity"]}\n")
+    
         elif stall_name == "signing_stall":
-            band = controller.get_festival().get_signing_band()
+            band = festival.get_signing_band()
+            signing_order = festival.get_signing_order()
+
+            insert_in_box(stall_log_box, "Aktuálně podepisovaní návštěvníci: ", f"{data['num_people_served']}\n")
+            insert_in_box(stall_log_box, "Návštěvníků ve frontě: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celková kapacita fronty na autogramiády: ", f"{data['capacity']}\n")
 
             if band:
-                band = band["band_name"]
-                stall_log_box.insert("end", f"Právě má autogramiádu kapela: {band}\n")
+                stall_log_box.insert("end", "\n")
+
+                start_signing_time = time_converter.get_real_time(time=band["start_signing_session"])
+                end_singing_time = time_converter.get_real_time(time=band["end_signing_session"])
+                stall_log_box.insert("end", f"Právě má autogramiádu kapela {band["band_name"]}, a to od {start_signing_time} do {end_singing_time}.\n", "indent")
 
             else:
-                stall_log_box.insert("end", f"V tuto chvíli žádná kapela nemá autogramiádu\n")
+                stall_log_box.insert("end", "\n")
+                stall_log_box.insert("end", f"V tuto chvíli žádná kapela nemá autogramiádu. ", "indent")
+                next = bands.next_band(signing_order, env=env, signing=True)
+            
+                if next:
+                    stall_log_box.insert("end", f"Následující autogramiádu má kapela {next["band_name"]} a bude probíhat od {time_converter.get_real_time(next["start_signing_session"])} do {time_converter.get_real_time(next["end_signing_session"])}.\n", "indent")
 
         elif stall_name == "meadow_for_living":
-            stall_log_box.insert("end", f"Počet stanů: {data["num_tents"]}\n")
-            stall_log_box.insert("end", f"Počet návštěvníků ve stanu: {data["num_people_in_tents"]}\n")
+            insert_in_box(stall_log_box, "Počet postavených stanů: ", f"{data['num_tents']}\n")
+            insert_in_box(stall_log_box, "Počet návštěvníků ve stanu: ", f"{data['num_people_in_tents']}\n")
+            insert_in_box(stall_log_box, "Kapacita louky na stanování: ", f"{data['capacity']} stanů\n")
         
-        stall_log_box.insert("end", f"Návštěvníků obsluhováno: {data["num_people_served"]}\n")
-        stall_log_box.insert("end", f"Návštěvníků ve frontě: {data["num_people_in_queue"]}\n")
-        stall_log_box.insert("end", f"Kapacita stánku: {data["capacity"]}\n")
+        else:
+            if stall_name == "handwashing_station": 
+                text = "Návštěvníků u umývárny: "
+
+            elif stall_name == "atm":
+                text = "Návštěvníků vybírá peníze: "
+
+            elif stall_name in ["hammer", "carousel", "bench", "bungee_jumping", "jumping_castle", "rollercoaster"]:
+                text = "Návštěvníků na atrakci: "
+
+            elif stall_name == "water_pipe_stall":
+                text = "Návštěvníků na vodní dýmce: "
+
+            elif stall_name == "chill_stall":
+                text = "Odpočívajích návštěvníků: "
+
+            else:
+                text = "Návštěvníků obsluhováno: "
+            
+            insert_in_box(stall_log_box, text, f"{data['num_people_served']}\n")                
+            insert_in_box(stall_log_box, "Návštěvníků ve frontě: ", f"{data['num_people_in_queue']}\n")
+            insert_in_box(stall_log_box, "Celková kapacita stánku: ", f"{data['capacity']}\n")
 
         
         stall_log_box.configure(state="disabled")
+
+    def insert_in_box(box, bold, text):
+        box.insert("end", bold, ("indent", "bold"))
+        box.insert("end", text, ("indent"))
 
     def on_drag(event):
         """Aktualizace při tažení myší – kreslení zóny nebo přesun objektu."""
@@ -2443,8 +3687,26 @@ def run_app():
 
 
     def draw_load(data):
-        global zones_data
+        global zones_data, object_id
         zones_data = data
+
+        max_id = 0
+
+        for zone_type, inst in zones_data.items():
+            if not inst:
+                continue
+
+            # objekty v zóně
+            for obj in inst.get("objects", []):
+                if obj["id"] > max_id:
+                    max_id = obj["id"]
+
+                # extra objekty (např. Stání u podia)
+                for extra in obj.get("extra", []):
+                    if extra["id"] > max_id:
+                        max_id = extra["id"]
+
+        object_id = max_id
 
         # 1) vykreslit zóny
         for zone_type, inst in zones_data.items():
@@ -2471,52 +3733,40 @@ def run_app():
                 continue
 
             for line in inst.get("lines", []):
+
                 target_name = line["other_zone"]["zone"]
-
-                zona2 = next(
-                    (z for z in zones_data.values() if z and z.get("type") == target_name),
-                    None
-                )
-
-                vstup = None
-                if "entry" in line:
-                    entry_id = line["entry"]["id"]
-                    vstup = next(
-                        (obj for obj in inst["objects"]
-                        if obj.get("object") == "Vstup" and obj.get("id") == entry_id),
-                        None
-                    )
-
-                all_lines.append({
-                    "zona1": inst,
-                    "zona2": zona2,
-                    "vstup": vstup,
-                    "line": line
-                })
+                zona2 = next((z for z in zones_data.values() if z and z.get("type") == target_name), None)
+                all_lines.append({"zona1": inst, "zona2": zona2, "line": line})
 
         # reset lines
         for inst in zones_data.values():
             if inst:
                 inst["lines"] = []
-
-        # znovu nakreslit
+        
         for item in all_lines:
             zona1 = item["zona1"]
             zona2 = item["zona2"]
-            vstup = item["vstup"]
+
+            if "entry" in item["line"]:
+                vstup = item["line"]["entry"]
+            else:
+                vstup = None
 
             if not zona1 or not zona2:
                 continue
 
             if vstup:
-                connect_entry_to_zone(vstup, zona2)
+                if zona1["type"] == "Festivalový areál":
+                    connect_entry_to_zone(vstup, zona2)
+
+                elif zona2["type"] == "Festivalový areál":
+                    connect_zone_to_entry(zona1, vstup)
+
             else:
                 connect_zone_to_zone(zona1, zona2)
 
-    print("Všechny linky vykresleny.")
-
-    print("Všechny čáry vykresleny.")
-
+        print("Všechny linky vykresleny.")
+        
     canvas.bind("<Button-1>", on_click)
     canvas.bind("<B1-Motion>", on_drag)
     canvas.bind("<ButtonRelease-1>", on_release)

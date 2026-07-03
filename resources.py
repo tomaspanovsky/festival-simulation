@@ -5,10 +5,11 @@ import source
 import random
 import drinks
 import attractions
-from data.load_data import load_data
+from gui import loading
+from outputs.code.logs import log_message
 
 class Stall:
-    def __init__(self, stall_type, stall_name, stall_cz_name, zone, resource, id, x, y, canvas_ids, canvas_ids_extra = None):
+    def __init__(self, stall_type, stall_name, stall_cz_name, zone, resource, id, x, y, opening_hours, canvas_ids, canvas_ids_extra = None):
         self.stall_type = stall_type
         self.stall_name = stall_name
         self.stall_cz_name = stall_cz_name
@@ -17,16 +18,23 @@ class Stall:
         self.id = id
         self.x = x
         self.y = y
+        self.opening_hours = opening_hours
         self.canvas_ids = canvas_ids
         self.canvas_ids_extra = canvas_ids_extra
         self.attraction = None
         self.positions = None
+        self.opend = False
+        self.string_opening_hours = None
+        
 
     def get_name(self):
         return self.stall_name
-        
+      
     def get_cz_name(self):
         return self.stall_cz_name
+    
+    def get_type(self):
+        return self.stall_type
     
     def get_zone(self):
         return self.zone
@@ -37,8 +45,41 @@ class Stall:
     def get_resource(self):
         return self.resource
     
+    def get_opening_hours(self):
+        return self.opening_hours
+    
+    def get_string_opening_hours(self):
+        return self.string_opening_hours
+
     def get_canvas_ids(self):
         return self.canvas_ids
+    
+    def get_attraction(self):
+        return self.attraction
+    
+    def get_positions(self):
+        return self.positions
+
+    def get_free_positions(self):
+        return self.positions[0]
+    
+    def get_img_id(self):
+        return self.canvas_ids[2]
+    
+    def get_occupied_positions(self):
+        return (len(self.positions)-1) - self.positions[0]
+    
+    def is_opend(self):
+        return self.opend
+    
+    def open(self):
+        self.opend = True
+    
+    def close(self):
+        self.opend = False
+
+    def set_string_opening_hours(self, opening_hours):
+        self.string_opening_hours = opening_hours
     
     def get_capacity(self):
         if self.stall_name == "toitoi":
@@ -73,7 +114,7 @@ class Stall:
             count = self.resource["first_lines"].count + self.resource["middle"].count + self.resource["back"].count
 
         elif self.stall_name == "signing_stall":
-            count =  self.resource[1].count + self.resource[2].count
+            count =  self.resource[1].count
 
         elif self.stall_name == "meadow_for_living":
             count = 0
@@ -110,25 +151,53 @@ class Stall:
             num_in_queue = len(self.resource["first_lines"].queue) + len(self.resource["middle"].queue) + len(self.resource["back"].queue)
 
         elif self.stall_name == "signing_stall":
-            num_in_queue = len(self.resource[1].queue) + len(self.resource[2].queue)
+            num_in_queue = len(self.resource[2].queue)
 
         else:
             num_in_queue = len(self.resource.queue)
 
         return num_in_queue
     
-def create_resources(env, capacities, num_visitors, simulation_start_time):
+def create_resources(env, capacities, num_visitors, time_converter, opening_times, num_days):
     stalls = {"ENTRANCE_ZONE" : [], "TENT_AREA" : [], "FESTIVAL_AREA" : [], "CHILL_ZONE" : [], "FUN_ZONE" : []}
+    meadows = 0
+    stalls_in_locations = loading.load_festival_settings_data("STALLS_BY_LOCATIONS")
+    festival_data = loading.load_festival_settings_data()
+    entry_location = None
+    opening_hours_inside = get_stalls_schedule(opening_times["inside_festival_area"], time_converter, num_days)
+    opening_hours_outside = get_stalls_schedule(opening_times["outside_festival_area"], time_converter, num_days)
+    opening_hours = None
+    stalls_with_no_schedule = source.STALLS_WITH_NO_SCHEDULE
+    entry_lines = {}
 
-    stalls_in_locations = load_data("STALLS_BY_LOCATIONS")
+    for zone, data in festival_data.items():
+        lines = []
+
+        if data:
+            if zone == "Festivalový areál":
+                continue
+            
+        
+            for line in data["lines"]:
+                if "entry" in line:
+                    lines.append(line)
+
+            entry_lines[source.Locations(zone).name] = lines
 
     for location in stalls_in_locations:
         objected_stall = []
        
         stalls_in_locations[location].sort(key=get_stall_name)
 
-
         for stall in stalls_in_locations[location]:
+            
+            if location == "FESTIVAL_AREA":
+                if stall["name"] not in stalls_with_no_schedule:
+                    opening_hours = opening_hours_inside
+            
+            else:
+                if stall["name"] not in stalls_with_no_schedule:
+                    opening_hours = opening_hours_outside
 
             if stall["name"] == "toitoi":
                 resource = create_toitois(env, stall, capacities, location)
@@ -162,36 +231,55 @@ def create_resources(env, capacities, num_visitors, simulation_start_time):
 
             else:
                 resource = simpy.Resource(env, capacity=capacities[stall["name"]])
+            
+        
+            if stall["name"] == "entrance": 
+                stall_id = stall["id"]
 
-
+                for zone, data in entry_lines.items():
+                    for line in data:
+                        if line["entry"]["id"] == stall_id:
+                            entry_location = zone
+                            break
             
             new_stall = Stall(stall["type"],
                             stall["name"],
                             stall["cz_name"],
-                            location,
+                            entry_location if entry_location else location,
                             resource,
                             stall["id"],
                             stall["x"],
                             stall["y"],
+                            opening_hours,
                             stall["canvas_ids"])
             
+            entry_location = None
+
+            if new_stall.get_name() not in source.STALLS_WITH_NO_SCHEDULE:
+                if new_stall.get_zone() == "FESTIVAL_AREA":
+                    new_stall.set_string_opening_hours(opening_times["inside_festival_area"])
+                else:
+                    new_stall.set_string_opening_hours(opening_times["outside_festival_area"])
+
             if stall["name"] == "meadow_for_living":
-                    positions = locations.create_positions(capacities["meadow_for_living"])
-                    new_stall.positions = positions
+                positions = locations.create_positions(capacities["meadow_for_living"])
+                new_stall.positions = positions
+                meadows += 1
 
             if stall["name"] == "charging_stall":
-                    positions = locations.create_positions(capacities["charging_stall_mobile"])
-                    new_stall.positions = positions
+                positions = locations.create_positions(capacities["charging_stall_mobile"])
+                new_stall.positions = positions
 
             if stall["type"] == "attraction":
                 attraction_data = source.ATTRACTIONS["attractions"][stall["name"]]
-                new_stall.attraction = attractions.Attraction(env, resource, stall["cz_name"], attraction_data, 0.5, 10, simulation_start_time)
+                new_stall.attraction = attractions.Attraction(env, resource, stall["cz_name"], attraction_data, 0.5, 10, time_converter)
                 
 
             objected_stall.append(new_stall)
 
         stalls[location] = objected_stall
-    return stalls
+
+    return stalls, meadows, [opening_hours_inside, opening_hours_outside]
 
 def create_toitois(env, stall, capacities, location):
     urinals = []
@@ -214,7 +302,8 @@ def create_toitois(env, stall, capacities, location):
                             i,
                             stall["x"],
                             stall["y"],
-                            canvas_ids=stall["canvas_ids"]))
+                            None,
+                            stall["canvas_ids"]))
         else:
             name = "toitoi"
             cz_name = "toitoi"
@@ -226,7 +315,8 @@ def create_toitois(env, stall, capacities, location):
                             i,
                             stall["x"],
                             stall["y"],
-                            canvas_ids=stall["canvas_ids"]))
+                            None,
+                            stall["canvas_ids"]))
             
     stalls.append(urinals)
     stalls.append(toitois)
@@ -244,7 +334,7 @@ def find_stall_with_shortest_queue_in_zone(self, festival, type, name=None, stal
     if not stalls:
         stalls = find_stalls_in_zone(self, festival, type, name, alco_nonalco, stalls_to_reduce=stalls_to_reduce)
 
-    if type == "tent_area" or type == "charging_stall" or type == "standing_at_stage" or type == "signing_stall":
+    if type == "tent_area" or type == "charging_stall" or type == "standing_at_stage":
         return stalls
 
     if stalls == []:
@@ -255,7 +345,6 @@ def find_stall_with_shortest_queue_in_zone(self, festival, type, name=None, stal
     
     else:
         stall_with_least_people = stalls[0]
-
         least_num_people = stall_with_least_people.get_num_in_queue() + stall_with_least_people.get_num_using()
 
         for stall in stalls[1:]:
@@ -273,24 +362,23 @@ def find_stalls_in_zone(self, festival, type, name=None, alco_nonalco = None, st
 
     stalls = []
     
-    if type == "entrances" or type == "stage" or type == "signing_stall":
+    if type == "entrances" or type == "stage" or type == "signing_stall" or self.state["location"] == source.Locations.STAGE_STANDING:
         location = "FESTIVAL_AREA"
 
-    elif self.state["location"] == source.Locations.SIGNING_STALL or self.state["location"] == source.Locations.STAGE_STANDING:
-        location = "FESTIVAL_AREA"
     else:
         location = self.state["location"].name
 
     if stalls_to_reduce:
         where = stalls_to_reduce
+
     else:
-        where = festival.stalls[location]
+        where = festival.get_stalls()[location]
 
     for stall in where:
 
-        if stall.stall_type == type:
+        if stall.get_type() == type:
             if name:
-                if stall.stall_name == name:            
+                if stall.get_name() == name:            
                     stalls.append(stall)
 
             elif alco_nonalco and alco_nonalco == "soft_drinks":
@@ -303,12 +391,95 @@ def find_stalls_in_zone(self, festival, type, name=None, alco_nonalco = None, st
     return stalls
 
 def find_all_type_stall_at_festival(all_stalls, type):
-    all_food_stalls_at_festival = []
+    all_stalls_at_festival = []
 
     for zone_name, stalls in all_stalls.items():
         for stall in stalls:
             if stall.stall_type == type:
-                all_food_stalls_at_festival.append(stall.stall_name)
+                all_stalls_at_festival.append(stall.stall_name)
     
-    return all_food_stalls_at_festival
+    return all_stalls_at_festival
+
+def get_stalls_schedule(opening_times, time_converter, num_days):
+    open_time = time_converter.format_time_string_to_mins(opening_times["open"])
+    close_time = time_converter.format_time_string_to_mins(opening_times["close"])
+    start_time = time_converter.get_start_time()
+    schedule = []
+
+    if close_time < start_time:
+        close_time += 1440
+
+    for i in range(num_days):
+        schedule.append([((i * 1440) + open_time - start_time), (i * 1440) + close_time - start_time])
+    
+    return schedule
+
+def set_stalls_schedules(stalls, controller, canvas, gray_images, colored_images):
+    stalls_with_no_schedule = source.STALLS_WITH_NO_SCHEDULE
+    env = controller.get_env()
+    
+    for zone_stalls in stalls.values():
+        for stall in zone_stalls:
+            if stall.get_name() not in stalls_with_no_schedule:
+                env.process(set_stall_schedule(stall, controller, canvas, gray_images, colored_images))
+            
+            else:
+                stall.open()
+
+def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
+    opening_hours = stall.get_opening_hours()
+    festival = controller.get_festival()
+    env = controller.get_env()
+    time_converter = controller.get_time_converter()
+    zone = stall.get_zone()
+    locations = source.Locations
+    zone_cz = locations[zone].value.lower()
+    stall_cz_name = stall.get_cz_name()
+    zone = stall.get_zone()
+
+    if stall_cz_name == "red bull stánek":
+        parts = stall_cz_name.split(" ")
+        parts[0] = parts[0].capitalize()
+        parts[1] = parts[1].capitalize()
+        stall_cz_name = " ".join(parts)
+    else:
+        stall_cz_name = stall_cz_name[0].upper() + stall_cz_name[1:]
+
+    img_color = colored_images[stall_cz_name][0]
+
+    for day in opening_hours:
+
+        if env.now >= day[0]:
+            stall.open()
+            
+        else:
+            canvas.itemconfig(stall.get_img_id(), image=gray_images[stall.get_name()])
+            yield env.timeout(day[0] - env.now)
+            stall.open()
+
+        canvas.itemconfig(stall.get_img_id(), image=img_color)
+
+        if zone == "FESTIVAL_AREA":
+            festival.set_possible_actions_situation(inside=True)
+
+        else:
+            festival.set_possible_actions_situation(outside=True)
+
+        message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě otevřel."
+        print(message)
+        log_message(message)
+
+        yield env.timeout(day[1] - env.now)
+        stall.close()
+        canvas.itemconfig(stall.get_img_id(), image=gray_images[stall.get_name()])
+
+        if zone == "FESTIVAL_AREA":
+            festival.set_possible_actions_situation(inside=False)
+            
+        else:
+            festival.set_possible_actions_situation(outside=False)
+
+        message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě zavřel."
+        print(message)
+        log_message(message)
 

@@ -1,0 +1,55 @@
+\babel@toc {czech}{}\relax 
+\contentsline {section}{\numberline {1}Úvod}{8}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Motivace}{8}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Struktura práce}{8}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Diskrétní simulace}{9}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Systém}{9}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}Komponenty systému}{9}{subsubsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.2}Úvod do simulace}{9}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Model systému}{10}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Technická dokumentace}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Přehled použitých technologií}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Knihovna Simpy}{11}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Generátory v Pythonu}{11}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Základní principy SimPy}{12}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Prostředí simulace}{14}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Události}{16}{subsubsection.3.2.4}%
+\contentsline {paragraph}{\numberline {3.2.4.1}Specializované události}{16}{paragraph.3.2.4.1}%
+\contentsline {paragraph}{\numberline {3.2.4.2}Uživatelsky definované události}{16}{paragraph.3.2.4.2}%
+\contentsline {paragraph}{\numberline {3.2.4.3}Stavy událostí}{17}{paragraph.3.2.4.3}%
+\contentsline {paragraph}{\numberline {3.2.4.4}Callbacky}{17}{paragraph.3.2.4.4}%
+\contentsline {paragraph}{\numberline {3.2.4.5}Příklad uživatelsky definované události s callbacky}{18}{paragraph.3.2.4.5}%
+\contentsline {paragraph}{\numberline {3.2.4.6}Procesy jsou také události}{19}{paragraph.3.2.4.6}%
+\contentsline {subsubsection}{\numberline {3.2.5}Sdílené zdroje}{20}{subsubsection.3.2.5}%
+\contentsline {paragraph}{\numberline {3.2.5.1}Resources}{20}{paragraph.3.2.5.1}%
+\contentsline {subsection}{\numberline {3.3}Knihovna Tkinter}{22}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Knihovna Pillow}{22}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Uživatelská dokumentace}{23}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Zprovoznění aplikace}{23}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Uživatelské rozhraní}{23}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Nastavení simulace}{23}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Návrh rozložení festivalového areálu}{23}{subsubsection.4.2.2}%
+\contentsline {section}{\numberline {5}Styly pro psaní bakalářských a diplomových prací}{23}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Požadavky a podprovaná prostředí}{24}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Přepínače}{24}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Geometrie stránky}{27}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Sazba částí dokumentu}{27}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Sazba úvodní strany či obsahu}{27}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Závěry}{27}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Matematika}{27}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Sazba literatury}{28}{subsection.6.4}%
+\contentsline {subsubsection}{\numberline {6.4.1}Sazba bibliografie přes \textsc {Bib}\LaTeX {}}{28}{subsubsection.6.4.1}%
+\contentsline {subsubsection}{\numberline {6.4.2}Manuální sazba bibliografie}{28}{subsubsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.5}Drobná makra}{28}{subsection.6.5}%
+\contentsline {subsection}{\numberline {6.6}Sazba rejstříku}{29}{subsection.6.6}%
+\contentsline {subsection}{\numberline {6.7}Sazba zdrojových kódů}{29}{subsection.6.7}%
+\contentsline {section}{Z\'av\v er}{33}{section*.3}%
+\babel@toc {czech}{}\relax 
+\babel@toc {czech}{}\relax 
+\contentsline {section}{Conclusions}{34}{section*.5}%
+\babel@toc {english}{}\relax 
+\babel@toc {czech}{}\relax 
+\contentsline {section}{\numberline {A}První příloha}{35}{appendix.A}%
+\contentsline {section}{\numberline {B}Druhá příloha}{35}{appendix.B}%
+\contentsline {section}{\numberline {C}Obsah elektronických dat}{35}{appendix.C}%
+\contentsline {section}{Seznam zkratek}{37}{section*.7}%

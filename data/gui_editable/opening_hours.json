@@ -1,0 +1,10 @@
+{
+    "outside_festival_area": {
+        "open": "09:00",
+        "close": "04:00"
+    },
+    "inside_festival_area": {
+        "open": "10:00",
+        "close": "02:30"
+    }
+}

@@ -1,7 +1,6 @@
 import source
 import random
 import resources
-from data.load_data import load_data
 
 def find_all_drinks_at_festival(drink_stalls_at_festival):
     drinks = []

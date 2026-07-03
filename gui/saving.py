@@ -3,7 +3,10 @@ import os
 from tkinter import filedialog
 import source
 
-def save(zones_data):
+def save(zones_data, auto = None):
+    with open(source.file_path_festival_settings, "w") as f:
+        pass
+    
     result = {"ACTIONS_BY_LOCATIONS": {},
               "STALLS_BY_LOCATIONS": {},
               "ACTIONS_MOVING": {}}
@@ -17,6 +20,10 @@ def save(zones_data):
         "Spawn zóna": "SPAWN_ZONE"
     }
 
+    food_stalls = ["Pizza stánek", "Burger stánek", "Gyros stánek", "Grill stánek", "Bel hranolky stánek", "Langoš stánek", "Sladký stánek"]
+    drink_stalls = ["Nealko stánek", "Pivní stánek", "Red Bull stánek", "Stánek s míchanými drinky"]
+    attractions = ["bungee-jumping", "horská dráha", "lavice", "kladivo", "řetizkáč", "skákací hrad"]
+
     for zone_name, inst in zones_data.items():
         if not inst:
             continue
@@ -29,11 +36,6 @@ def save(zones_data):
         result["ACTIONS_BY_LOCATIONS"][location_key] = {}
         result["STALLS_BY_LOCATIONS"][location_key] = []
         result["ACTIONS_MOVING"][location_key] = []
-
-
-        food_stalls = ["Pizza stánek", "Burger stánek", "Gyros stánek", "Grill stánek", "Bel hranolky stánek", "Langoš stánek", "Sladký stánek"]
-        drink_stalls = ["Nealko stánek", "Pivní stánek", "Red Bull stánek", "Stánek s míchanými drinky"]
-        attractions = ["bungee-jumping", "horská dráha", "lavice", "kladivo", "řetizkáč", "skákací hrad"]
 
         # seznam objektů v dané zóně
         for obj in inst.get("objects", []):
@@ -193,6 +195,9 @@ def save(zones_data):
             
             #akce, které jdou uskutečnit v jakékoliv zóně
             action["smoking"] = "SMOKE"
+            action["eat"] = "EAT"
+            action["drink"] = "DRINK"
+            action["nothing"] = "DO_NOTHING"
 
             if stall["type"] == None:
                 stall["type"] = "Others"
@@ -200,7 +205,7 @@ def save(zones_data):
             stalls.append(stall)
             
             if stall_extra:
-                stall_extra["id"] = obj["id"]
+                stall_extra["id"] = obj_extra[0]["id"]
                 stall_extra["x"] = obj["x"]
                 stall_extra["y"] = obj["y"]
                 stall_extra["cz_name"] = obj["extra"][0]["object"]
@@ -234,93 +239,91 @@ def save(zones_data):
                 mapped = location_map.get(destination_type, destination_type)
                 
                 if "entry" in line["other_zone"] and line["other_zone"]["entry"] and line["other_zone"]["type"] == "Festivalový areál":
-                    destination = "GO_TO_" + mapped + "_ENTRY_" + str(line["other_zone"]["entry"]["id"])
-                else:
+                    if not "GO_TO_FESTIVAL_AREA_ENTRY" in traces:
+                        destination = "GO_TO_FESTIVAL_AREA_ENTRY"
+                    else:
+                        continue
+
+                elif ("GO_TO_" + mapped) not in traces:
                     destination = "GO_TO_" + mapped
+                else:
+                    continue
+                
                 traces.append(destination)
 
-                result["ACTIONS_MOVING"][location_key] = traces
-                        
+            result["ACTIONS_MOVING"][location_key] = traces
 
-    file_path = filedialog.asksaveasfilename(
-    defaultextension=".json",    
-    filetypes=[("JSON files", "*.json")],
-    title="Uložit soubor jako"
-    )
-
+        result["ACTIONS_BY_LOCATIONS"]["SPAWN_ZONE"] = {"departure": "DEPARTURE"}       
+    
     def serialize_zones(zones):
-        serialized = {}
+            serialized = {}
 
-        for zone_name, inst in zones.items():
-            if not inst:
-                serialized[zone_name] = None
-                continue
+            for zone_name, inst in zones.items():
+                if not inst:
+                    serialized[zone_name] = None
+                    continue
 
-            serialized_inst = inst.copy()
-            # místo kompletní reference na other_zone dáme jen id nebo type
-            if "lines" in inst:
-                lines = []
-                for line in inst["lines"]:
-                    if "entry" in line["other_zone"] and line["other_zone"]["entry"]:
-                        lines.append({"id": line["id"], "other_zone": {"zone": line["other_zone"]["type"]}, "entry": line["other_zone"]["entry"]})                      
-                    else:
-                        lines.append({"id": line["id"], "other_zone": {"zone": line["other_zone"]["type"]}})
-
-                    serialized_inst["lines"] = lines
+                serialized_inst = inst.copy()
                 
-            serialized[zone_name] = serialized_inst
-        return serialized
+                if "lines" in inst:
+                    lines = []
+                    for line in inst["lines"]:
+                        if "entry" in line["other_zone"] and line["other_zone"]["entry"]:
+                            lines.append({"id": line["id"], "other_zone": {"zone": line["other_zone"]["type"]}, "entry": line["other_zone"]["entry"]})                      
+                        else:
+                            lines.append({"id": line["id"], "other_zone": {"zone": line["other_zone"]["type"]}})
+
+                        serialized_inst["lines"] = lines
+                    
+                serialized[zone_name] = serialized_inst
+            return serialized
     
     zones_data = serialize_zones(zones_data)
-
     data = [result, zones_data]
-    
+
+    if not auto:
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Uložit soubor jako"
+        )
+
+        if file_path:
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+
+            print("Soubor uložen do:", file_path)
+        
+        else:
+            print("Uživatel zrušil uložení")
+            return False
+
+    file_path = source.file_path_festival_settings
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+        print("Soubor interně uložen do:", file_path)
+
+    return True
+
+def save_data(data, filepath):
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def save_data_dialog(data):
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json")],
+        title="Uložit soubor jako"
+    )
+
     if file_path:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
-        data_dir = os.path.join(project_root, "data")
-        os.makedirs(data_dir, exist_ok=True)
-
-        internal_path = os.path.join(data_dir, "festival_settings.json")
-
-        with open(internal_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-
-        print("Soubor uložen do:", file_path)
+        print("Soubor úspěšně uložen do:", file_path)
+    
     else:
         print("Uživatel zrušil uložení")
-
-def save_merch_settings(merch):
-    path = source.file_path_merch
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(merch, f, ensure_ascii=False, indent=4)
-
-    print("Merch nastavení uloženo.")
-
-def save_capacities_settings(capacities):
-    path = source.file_path_capacities
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(capacities, f, ensure_ascii=False, indent=4)
-
-    print("Capacity nastavení uloženo.")
-
-def save_fest_prices_settings(fest_prices):
-    path = source.file_path_fest_prices
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(fest_prices, f, ensure_ascii=False, indent=4)
-
-    print("Nastavení festivalových cen uloženo.")
-
-def save_time_settings(time_settings):
-    path = source.file_path_time_settings
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(time_settings, f, ensure_ascii=False, indent=4)
-
-    print("Nastavení časů uloženo.")
+        return False

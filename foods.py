@@ -1,9 +1,6 @@
 import source
 import random
 import resources
-import times
-from outputs.code import logs
-from data.load_data import load_data
 
 def find_all_foods_at_festival(food_stalls_at_festival):
     foods = []

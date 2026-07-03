@@ -42,6 +42,8 @@ def add_stalls_to_logs(stalls):
         stalls_stats[zone] = stalls_in_zone
 
 def log_stalls_stats(stall, location, waiting_time = None):
+    if location == "STAGE_STANDING":
+        location = "FESTIVAL_AREA"
 
     for stall_data in stalls_stats[location]:
         if stall_data["id"] == stall.id and stall_data["stall_name"] == stall.stall_name:
@@ -64,7 +66,8 @@ def save_actual_state(controller):
     stalls_states.append(state)
     
 
-def save_logs(festival):
+def save_logs():
+    global visitors_logs, all_messages, stalls_stats, stalls_states
 
     with open("outputs/visitors_expiriance.json", "w", encoding="utf-8") as f:
         json.dump(visitors_logs, f, indent=4, ensure_ascii=False, cls=EnumEncoder)
@@ -72,11 +75,13 @@ def save_logs(festival):
     with open("outputs/all_messages.json", "w", encoding="utf-8") as f:
         json.dump(all_messages, f, indent=4, ensure_ascii=False, cls=EnumEncoder)
 
-    with open("outputs/lineup.json", "w", encoding="utf-8") as f:
-        json.dump(festival.get_lineup(), f, indent=4, ensure_ascii=False, cls=EnumEncoder)
-
     with open("outputs/stalls_max_stats.json", "w", encoding="utf-8") as f:
         json.dump(stalls_stats, f, indent=4, ensure_ascii=False, cls=EnumEncoder)
 
     with open("outputs/simulation_states.json", "w", encoding="utf-8") as f:
         json.dump(stalls_states, f, indent=4, ensure_ascii=False, cls=EnumEncoder)
+
+    visitors_logs = {}
+    all_messages = []
+    stalls_stats = {}
+    stalls_states = []

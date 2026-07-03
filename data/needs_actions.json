@@ -20,5 +20,9 @@
   "smoking_water_pipe": "GO_SMOKE_WATER_PIPE",
   "tiredness": "GO_CHILL",
   "low_cigars": "BUY_CIGARS",
-  "attraction_desire": "VISIT_ATTRACTION"
+  "attraction_desire": "VISIT_ATTRACTION",
+  "eat": "EAT",
+  "drink": "DRINK",
+  "departure": "DEPARTURE",
+  "nothing": "DO_NOTHING"
 }

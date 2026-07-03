@@ -1,0 +1,28 @@
+{
+    "stalls": {
+        "borders": {
+            "none": 0,
+            "low": 10,
+            "medium": 25,
+            "high": 50
+        },
+        "colors": {
+            "used": "#00ff40",
+            "low": "#ffff00",
+            "medium": "#FF9800",
+            "high": "#FF0000"
+        }
+    },
+    "stage": {
+        "borders": {
+            "low": 100,
+            "medium": 500,
+            "high": 1000
+        },
+        "colors": {
+            "low": "#00ff00",
+            "medium": "#ffff00",
+            "high": "#FF0000"
+        }
+    }
+}

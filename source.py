@@ -14,6 +14,13 @@ file_path_fest_prices = os.path.join(here, "data/gui_editable", "fest_prices.jso
 file_path_time_settings = os.path.join(here, "data/gui_editable", "time_settings.json")
 file_path_attraction = os.path.join(here, "data", "attractions.json")
 file_path_needs_actions = os.path.join(here, "data", "needs_actions.json")
+file_path_main_settings = os.path.join(here, "data/gui_editable", "main_settings.json")
+file_path_action_cooldown_times = os.path.join(here, "data", "actions_cooldowns_times.json")
+file_path_festival_settings = os.path.join(here, "data", "festival_settings.json")
+file_path_lineup = os.path.join(here, "data", "lineup.json")
+file_path_highlighs = os.path.join(here, "data/gui_editable", "highlighs.json")
+file_path_stall_en_to_cz_names = os.path.join(here, "data", "stall_en_to_cz_names.json")
+file_path_stalls_opening_hours = os.path.join(here, "data/gui_editable", "opening_hours.json")
 
 class Groups(enum.Enum):
     GROUP = "skupina"
@@ -21,14 +28,13 @@ class Groups(enum.Enum):
     INDIVIDUAL = "jednotlivec"
 
 class Locations(enum.Enum):
-    SPAWN_ZONE= "spawn zóna"
-    TENT_AREA = "stanové městečko"
-    ENTRANCE_ZONE = "vstupní zóna"
-    FESTIVAL_AREA = "festivalový areál"
-    CHILL_ZONE = "chill zóna"
-    STAGE_STANDING = "stání u podia"
-    FUN_ZONE = "zábavní zóna"
-    SIGNING_STALL = "autogramiády stánek"
+    SPAWN_ZONE= "Spawn zóna"
+    TENT_AREA = "Stanové městečko"
+    ENTRANCE_ZONE = "Vstupní zóna"
+    FESTIVAL_AREA = "Festivalový areál"
+    CHILL_ZONE = "Chill zóna"
+    STAGE_STANDING = "Stání u podia"
+    FUN_ZONE = "Zábavní zóna"
 
 with open(file_path_foods, "r", encoding="utf-8") as f:
     foods_data = json.load(f)
@@ -70,6 +76,16 @@ class Parents(enum.Enum):
     FATHER = "otec"
     MOTHER = "matka"
 
+class Attraction_states(enum.Enum):
+    RUNNING = "running"
+    WAITING = "waiting"
+
+class Possible_actions_situations(enum.Enum):
+    ALL_ON = "all_on"
+    ALL_OFF = "all_off"
+    INSIDE_OFf_OUTSIDE_ON = "inside_off_outside_on"
+    INSIDE_ON_OUTSIDE_OFF = "inside_on_outside_off"
+
 with open(file_path_names, "r", encoding="utf-8") as f:
     names_data = json.load(f)
 
@@ -91,3 +107,13 @@ with open(file_path_attraction, "r", encoding="utf-8") as f:
 
 with open(file_path_needs_actions, "r", encoding="utf-8") as f:
     NEEDS_ACTIONS = json.load(f)
+
+with open(file_path_action_cooldown_times, "r", encoding="utf-8") as f:
+    ACTION_COOLDOWNS = json.load(f)
+
+with open(file_path_stall_en_to_cz_names, "r", encoding="utf-8") as f:
+    STALL_TRANSLATOR= json.load(f)
+    STALL_CZ_TO_EN = STALL_TRANSLATOR[1]
+    STALL_EN_TO_CZ = STALL_TRANSLATOR[0]
+
+STALLS_WITH_NO_SCHEDULE = ["entrance", "handwashing_station", "signing_stall", "stage", "standing_at_stage", "tables", "toitoi", "meadow_for_living", "showers", "atm", "ticket_booth"]

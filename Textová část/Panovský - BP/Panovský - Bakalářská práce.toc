@@ -1,0 +1,67 @@
+\babel@toc {czech}{}\relax 
+\contentsline {section}{\numberline {1}Úvod}{8}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Motivace}{8}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Struktura práce}{8}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Diskrétní simulace}{9}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Systém}{9}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}Komponenty systému}{9}{subsubsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.2}Úvod do simulace}{9}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Model systému}{10}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Použité technologie}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Knihovna Simpy}{11}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Generátory v Pythonu}{11}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Základní principy SimPy}{12}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Prostředí simulace}{14}{subsubsection.3.1.3}%
+\contentsline {subsubsection}{\numberline {3.1.4}Události}{16}{subsubsection.3.1.4}%
+\contentsline {paragraph}{\numberline {3.1.4.1}Specializované události}{16}{paragraph.3.1.4.1}%
+\contentsline {paragraph}{\numberline {3.1.4.2}Uživatelsky definované události}{16}{paragraph.3.1.4.2}%
+\contentsline {paragraph}{\numberline {3.1.4.3}Stavy událostí}{17}{paragraph.3.1.4.3}%
+\contentsline {paragraph}{\numberline {3.1.4.4}Callbacky}{17}{paragraph.3.1.4.4}%
+\contentsline {paragraph}{\numberline {3.1.4.5}Uživatelsky definované události s callbacky}{17}{paragraph.3.1.4.5}%
+\contentsline {paragraph}{\numberline {3.1.4.6}Procesy jsou také události}{19}{paragraph.3.1.4.6}%
+\contentsline {subsubsection}{\numberline {3.1.5}Sdílené zdroje}{20}{subsubsection.3.1.5}%
+\contentsline {paragraph}{\numberline {3.1.5.1}Resources}{20}{paragraph.3.1.5.1}%
+\contentsline {subsection}{\numberline {3.2}Knihovna Tkinter}{22}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Knihovna Pillow}{22}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Technická dokumentace}{23}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Architektura aplikace}{23}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Uživatelská dokumentace}{23}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Zprovoznění aplikace}{23}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Uživatelské rozhraní}{24}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Nastavení simulace}{24}{subsubsection.5.2.1}%
+\contentsline {paragraph}{\numberline {5.2.1.1}Kapacity objektů }{24}{paragraph.5.2.1.1}%
+\contentsline {paragraph}{\numberline {5.2.1.2}Provozní doba stánků}{24}{paragraph.5.2.1.2}%
+\contentsline {paragraph}{\numberline {5.2.1.3}Ceny festivalu}{25}{paragraph.5.2.1.3}%
+\contentsline {paragraph}{\numberline {5.2.1.4}Ceny merche}{25}{paragraph.5.2.1.4}%
+\contentsline {paragraph}{\numberline {5.2.1.5}Označení objektů}{25}{paragraph.5.2.1.5}%
+\contentsline {subsubsection}{\numberline {5.2.2}Nastavení kapel}{25}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}Nastavení rozložení festivalového areálu}{25}{subsubsection.5.2.3}%
+\contentsline {subsubsection}{\numberline {5.2.4}Simulační režim}{25}{subsubsection.5.2.4}%
+\contentsline {subsection}{\numberline {5.3}Výsledky simulace}{25}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Výsledky simulace}{25}{section.6}%
+\contentsline {section}{\numberline {7}Možná rozšíření}{25}{section.7}%
+\contentsline {section}{\numberline {8}Závěr}{25}{section.8}%
+\contentsline {section}{\numberline {9}Styly pro psaní bakalářských a diplomových prací}{26}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Požadavky a podprovaná prostředí}{26}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Přepínače}{26}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Geometrie stránky}{30}{subsection.9.3}%
+\contentsline {section}{\numberline {10}Sazba částí dokumentu}{30}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Sazba úvodní strany či obsahu}{30}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Závěry}{30}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Matematika}{30}{subsection.10.3}%
+\contentsline {subsection}{\numberline {10.4}Sazba literatury}{31}{subsection.10.4}%
+\contentsline {subsubsection}{\numberline {10.4.1}Sazba bibliografie přes \textsc {Bib}\LaTeX {}}{31}{subsubsection.10.4.1}%
+\contentsline {subsubsection}{\numberline {10.4.2}Manuální sazba bibliografie}{31}{subsubsection.10.4.2}%
+\contentsline {subsection}{\numberline {10.5}Drobná makra}{31}{subsection.10.5}%
+\contentsline {subsection}{\numberline {10.6}Sazba rejstříku}{32}{subsection.10.6}%
+\contentsline {subsection}{\numberline {10.7}Sazba zdrojových kódů}{32}{subsection.10.7}%
+\contentsline {section}{Z\'av\v er}{36}{section*.3}%
+\babel@toc {czech}{}\relax 
+\babel@toc {czech}{}\relax 
+\contentsline {section}{Conclusions}{37}{section*.5}%
+\babel@toc {english}{}\relax 
+\babel@toc {czech}{}\relax 
+\contentsline {section}{\numberline {A}První příloha}{38}{appendix.A}%
+\contentsline {section}{\numberline {B}Druhá příloha}{38}{appendix.B}%
+\contentsline {section}{\numberline {C}Obsah elektronických dat}{38}{appendix.C}%
+\contentsline {section}{Seznam zkratek}{40}{section*.7}%
