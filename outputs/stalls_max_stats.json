@@ -64,13 +64,6 @@
             "max_waiting_time": 0
         },
         {
-            "id": 72,
-            "stall_name": "nonalcohol_stall",
-            "stall_cz_name": "nealko stánek",
-            "max_queue_length": 0,
-            "max_waiting_time": 0
-        },
-        {
             "id": 73,
             "stall_name": "nonalcohol_stall",
             "stall_cz_name": "nealko stánek",
@@ -95,28 +88,28 @@
             "id": 208,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 6,
-            "max_waiting_time": 1.5350407646542408
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 209,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 5,
-            "max_waiting_time": 1.7000461553257438
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 210,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 5,
-            "max_waiting_time": 3.128472466354916
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 211,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 4,
+            "max_queue_length": 0,
             "max_waiting_time": 0
         },
         {
@@ -174,7 +167,7 @@
             "id": 35,
             "stall_name": "showers",
             "stall_cz_name": "sprchy",
-            "max_queue_length": 2,
+            "max_queue_length": 0,
             "max_waiting_time": 0
         },
         {

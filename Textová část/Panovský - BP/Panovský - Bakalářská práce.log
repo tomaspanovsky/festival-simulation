@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.11)  3 JUL 2026 16:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.11)  7 JUL 2026 01:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1150,6 +1150,14 @@ Package: lipsum 2021-09-20 v2.7 150 paragraphs of Lorem Ipsum dummy text
 \l__lipsum_b_int=\count508
 
 (d:/texlive/2026/texmf-dist/tex/latex/lipsum/lipsum.ltd.tex))
+(d:/texlive/2026/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count509
+\float@exts=\toks51
+\float@box=\box112
+\@float@everytoks=\toks52
+\@floatcapt=\box113
+)
 Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 Package csquotes Info: Enabling multilingual quotes.
@@ -1162,7 +1170,7 @@ Package biblatex Warning: Attempt to redefine deprecated '\mkbibnamelast'.
 
 Package biblatex Warning: Conflicting options.
 (biblatex)                'urldate=iso' requires 'seconds=true'.
-(biblatex)                Setting 'seconds=true' on input line 127.
+(biblatex)                Setting 'seconds=true' on input line 128.
 
 (./PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.aux
 Package babel Info: 'czech' activates 'czech' shorthands.
@@ -1170,38 +1178,38 @@ Package babel Info: 'czech' activates 'czech' shorthands.
 )
 \openout1 = `"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.aux"'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 127.
-LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 128.
+LaTeX Font Info:    ... okay on input line 128.
 
 (d:/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count509
+\scratchcounter=\count510
 \scratchdimen=\dimen270
-\scratchbox=\box112
-\nofMPsegments=\count510
-\nofMParguments=\count511
-\everyMPshowfont=\toks51
-\MPscratchCnt=\count512
+\scratchbox=\box114
+\nofMPsegments=\count511
+\nofMParguments=\count512
+\everyMPshowfont=\toks53
+\MPscratchCnt=\count513
 \MPscratchDim=\dimen271
-\MPnumerator=\count513
-\makeMPintoPDFobject=\count514
-\everyMPtoPDFconversion=\toks52
+\MPnumerator=\count514
+\makeMPintoPDFobject=\count515
+\everyMPtoPDFconversion=\toks54
 ) (d:/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -1211,8 +1219,8 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package hyperref Info: Link coloring ON on input line 127.
-\c@lstlisting=\count515
+Package hyperref Info: Link coloring ON on input line 128.
+\c@lstlisting=\count516
 
 (./PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.glsdefs)
 Package biblatex Info: Trying to load language 'czech' -> 'czech-iso'...
@@ -1276,8 +1284,8 @@ Package biblatex Info: ... file '"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".bbl' not fo
 und.
 
 No file "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".bbl.
-Package biblatex Info: Reference section=0 on input line 127.
-Package biblatex Info: Reference segment=0 on input line 127.
+Package biblatex Info: Reference section=0 on input line 128.
+Package biblatex Info: Reference segment=0 on input line 128.
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
 * driver: pdftex
@@ -1314,50 +1322,50 @@ Package biblatex Info: Reference segment=0 on input line 127.
 <graphics/kititle-cz-nofont.pdf, id=4, 375.4025pt x 72.27pt>
 File: graphics/kititle-cz-nofont.pdf Graphic file (type pdf)
 <use graphics/kititle-cz-nofont.pdf>
-Package pdftex.def Info: graphics/kititle-cz-nofont.pdf  used on input line 132
+Package pdftex.def Info: graphics/kititle-cz-nofont.pdf  used on input line 133
 .
 (pdftex.def)             Requested size: 225.24323pt x 43.36232pt.
 <graphics/UP_znak.pdf, id=5, 101.59215pt x 101.59215pt>
 File: graphics/UP_znak.pdf Graphic file (type pdf)
 <use graphics/UP_znak.pdf>
-Package pdftex.def Info: graphics/UP_znak.pdf  used on input line 132.
+Package pdftex.def Info: graphics/UP_znak.pdf  used on input line 133.
 (pdftex.def)             Requested size: 101.59187pt x 101.59187pt.
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 1
-32.
+33.
 (d:/texlive/2026/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 1
-32.
+33.
 
 (d:/texlive/2026/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-132.
+133.
 
 (d:/texlive/2026/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-132.
+133.
 
 (d:/texlive/2026/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 132.
+(Font)              <12> on input line 133.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 132.
+(Font)              <8> on input line 133.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 132.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 132
+(Font)              <6> on input line 133.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 133
 .
 
 (d:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 132
+LaTeX Font Info:    Trying to load font information for U+msb on input line 133
 .
 
 (d:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -1370,7 +1378,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 texmf-dist/fonts/enc/dvips/lm/lm-ec.enc} <./graphics/kititle-cz-nofont.pdf> <./
 graphics/UP_znak.pdf>]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 132.
+(Font)              <10.95> on input line 133.
  [2] [3
 
 ] [4
@@ -1392,18 +1400,18 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 
 ] [9] [10]
 LaTeX Font Info:    Trying to load font information for T1+pcr on input line 19
-5.
+6.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
 ) [11{d:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc}] [12]
-Overfull \hbox (116.09859pt too wide) in paragraph at lines 258--258
+Overfull \hbox (116.09859pt too wide) in paragraph at lines 259--259
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se za£al pohybovat sm¥rem {d
 irection}")[] 
  []
 
 
-Overfull \hbox (29.69862pt too wide) in paragraph at lines 258--258
+Overfull \hbox (29.69862pt too wide) in paragraph at lines 259--259
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se zastavil a rozhlíºí se")[
 ] 
  []
@@ -1411,96 +1419,215 @@ Overfull \hbox (29.69862pt too wide) in paragraph at lines 258--258
 [13] [14]
 LaTeX Info: Symbol \textrightarrow not provided by
             font family pcr in TS1 encoding.
-            Default family used instead on input line 311.
+            Default family used instead on input line 312.
 
-Overfull \hbox (27.34918pt too wide) in paragraph at lines 313--314
+Overfull \hbox (27.34918pt too wide) in paragraph at lines 314--315
 \T1/lmr/m/n/12 Po prv-ním za-slání zprávy \T1/pcr/m/n/12 env.step() \T1/lmr/m/n
 /12 se spustí první pro-ces \T1/pcr/m/n/12 procesni_funkce_1
  []
 
 [15{d:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-Overfull \hbox (0.38646pt too wide) in paragraph at lines 327--329
+Overfull \hbox (0.38646pt too wide) in paragraph at lines 328--330
  \T1/lmr/bx/n/12 3.1.4.1 Spe-ci-a-li-zo-vané udá-losti[] \T1/lmr/m/n/12 Z p°e-d
 e-²lých ka-pi-tol jiº víme, ºe \T1/pcr/m/n/12 Timeout
  []
 
 
-Overfull \hbox (11.24771pt too wide) in paragraph at lines 334--335
+Overfull \hbox (11.24771pt too wide) in paragraph at lines 335--336
 []\T1/lmr/m/n/12 U uºi-va-tel-sky de-fi-no-va-ných udá-lostí lze ex-pli-citn¥ v
 y-vo-lat je-jich na-stání. Jakmile
  []
 
 [16]
-Overfull \hbox (25.98703pt too wide) in paragraph at lines 342--343
+Overfull \hbox (25.98703pt too wide) in paragraph at lines 343--344
 \T1/lmr/m/n/12 na-stat \T1/pcr/m/n/12 (not triggered)\T1/lmr/m/n/12 , má na-sta
 t \T1/pcr/m/n/12 (triggered)\T1/lmr/m/n/12 , nebo na-stala \T1/pcr/m/n/12 (proc
 essed)\T1/lmr/m/n/12 .
  []
 
 [17]
-Overfull \hbox (238.49854pt too wide) in paragraph at lines 384--384
+Overfull \hbox (238.49854pt too wide) in paragraph at lines 385--385
 []            \T1/pcr/m/n/12 print(f"{env.now}: {name} je na pozici {position[n
 ame]} a za£al se pohybovat")[] 
  []
 
 
-Overfull \hbox (29.69862pt too wide) in paragraph at lines 384--384
+Overfull \hbox (29.69862pt too wide) in paragraph at lines 385--385
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se zastavil a rozhlíºí se")[
 ] 
  []
 
 
-Overfull \hbox (72.73682pt too wide) in paragraph at lines 386--387
+Overfull \hbox (72.73682pt too wide) in paragraph at lines 387--388
 \T1/lmr/m/n/12 call-back· udá-losti po-mocí \T1/pcr/m/n/12 meeting_event.callba
 cks.append(meeting_callback)\T1/lmr/m/n/12 .
  []
 
 [18]
-Overfull \hbox (0.89864pt too wide) in paragraph at lines 403--403
+Overfull \hbox (0.89864pt too wide) in paragraph at lines 404--404
 []\T1/pcr/m/n/12 Roboti se potkali na pozici  {'Robot A': 3, 'Robot B': 3}[] 
  []
 
 [19]
-Overfull \hbox (2.5941pt too wide) in paragraph at lines 434--435
+Overfull \hbox (2.5941pt too wide) in paragraph at lines 435--436
 \T1/lmr/m/n/12 pro-ces·. Kaºdý sdí-lený zdroj ob-sa-huje ka-pa-citu, frontu pro
  vklá-dání \T1/pcr/m/n/12 put_queue\T1/lmr/m/n/12 ,
  []
 
 
-Overfull \hbox (29.74687pt too wide) in paragraph at lines 437--438
+Overfull \hbox (29.74687pt too wide) in paragraph at lines 438--439
 \T1/lmr/m/n/12 který ke kte-rému chceme p°i-stou-pit, nebo ho uvol-nit. Vo-lání
  \T1/pcr/m/n/12 request()/release()
  []
 
 
-Overfull \hbox (46.64969pt too wide) in paragraph at lines 439--440
+Overfull \hbox (46.64969pt too wide) in paragraph at lines 440--441
 \T1/pcr/m/n/12 Resource \T1/lmr/m/n/12 lze pro-vést jed-no-du-chým zp·-so-bem, 
 kdy po-mocí \T1/pcr/m/n/12 resource.request(req)
  []
 
 [20]
-Overfull \hbox (10.89821pt too wide) in paragraph at lines 468--469
+Overfull \hbox (10.89821pt too wide) in paragraph at lines 469--470
 \T1/lmr/m/n/12 stup ke zdroji d°ív¥ neº po-ºa-davky s niº²í pri-o-ri-tou. Po-sl
 ední va-ri-an-tou \T1/pcr/m/n/12 Resources
  []
 
 
-Overfull \hbox (0.45605pt too wide) in paragraph at lines 471--472
+Overfull \hbox (0.45605pt too wide) in paragraph at lines 472--473
 \T1/lmr/m/n/12 Grafické uºi-va-tel-ské roz-hraní apli-kace je vy-tvo-°eno kom-b
 i-nací kniho-ven \T1/pcr/m/n/12 Tkinter
  []
 
 [21] [22] [23]
-<images/uvodni_obrazovka.png, id=244, 1444.64719pt x 812.28468pt>
-File: images/uvodni_obrazovka.png Graphic file (type png)
-<use images/uvodni_obrazovka.png>
-Package pdftex.def Info: images/uvodni_obrazovka.png  used on input line 514.
+<images/nastaveni_1.png, id=264, 1444.64719pt x 812.28468pt>
+File: images/nastaveni_1.png Graphic file (type png)
+<use images/nastaveni_1.png>
+Package pdftex.def Info: images/nastaveni_1.png  used on input line 520.
 (pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
- [24 <./images/uvodni_obrazovka.png>] [25]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 5
-71.
+ [24]
+<images/nastaveni_capacity.png, id=272, 1444.64719pt x 812.28468pt>
+File: images/nastaveni_capacity.png Graphic file (type png)
+<use images/nastaveni_capacity.png>
+Package pdftex.def Info: images/nastaveni_capacity.png  used on input line 532.
 
-(d:/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
+(pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
+ [25
+pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.536 
+       <./images/nastaveni_1.png>]
+<images/nastaveni_otviraci_doby.png, id=281, 864.98157pt x 455.45157pt>
+File: images/nastaveni_otviraci_doby.png Graphic file (type png)
+<use images/nastaveni_otviraci_doby.png>
+Package pdftex.def Info: images/nastaveni_otviraci_doby.png  used on input line
+ 542.
+(pdftex.def)             Requested size: 409.50119pt x 215.61897pt.
+ [26
+pdfTeX warning (ext4): destination with the same identifier (name{figure.2}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.546 
+       <./images/nastaveni_capacity.png>] [27
+pdfTeX warning (ext4): destination with the same identifier (name{figure.3}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.557 
+       <./images/nastaveni_otviraci_doby.png>]
+<images/nastaveni_zvyrazneni.png, id=296, 1381.41093pt x 455.45157pt>
+File: images/nastaveni_zvyrazneni.png Graphic file (type png)
+<use images/nastaveni_zvyrazneni.png>
+Package pdftex.def Info: images/nastaveni_zvyrazneni.png  used on input line 56
+3.
+(pdftex.def)             Requested size: 409.50119pt x 135.0103pt.
+ [28
+pdfTeX warning (ext4): destination with the same identifier (name{figure.4}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.573 
+       <./images/nastaveni_zvyrazneni.png>]
+<images/nastaveni_generovani_harmonogramu.png, id=304, 824.32968pt x 812.28468p
+t>
+File: images/nastaveni_generovani_harmonogramu.png Graphic file (type png)
+<use images/nastaveni_generovani_harmonogramu.png>
+Package pdftex.def Info: images/nastaveni_generovani_harmonogramu.png  used on 
+input line 580.
+(pdftex.def)             Requested size: 409.50119pt x 403.51372pt.
+ [29]
+Overfull \hbox (26.15523pt too wide) in paragraph at lines 585--586
+[]\T1/lmr/m/n/12 Generátor li-ne-upu vy-u-ºívá se-znam ka-pel ulo-ºený v sou-bo
+ru \T1/pcr/m/n/12 /data/bands.json\T1/lmr/m/n/12 .
+ []
+
+[30
+pdfTeX warning (ext4): destination with the same identifier (name{figure.5}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.589 
+       <./images/nastaveni_generovani_harmonogramu.png>]
+
+LaTeX Warning: Reference `fig:nastaveni_vytvareni_harmonogramu.png' on page 31 
+undefined on input line 590.
+
+<images/nastaveni_vytvareni_harmonogramu.png, id=314, 998.22937pt x 567.62062pt
+>
+File: images/nastaveni_vytvareni_harmonogramu.png Graphic file (type png)
+<use images/nastaveni_vytvareni_harmonogramu.png>
+Package pdftex.def Info: images/nastaveni_vytvareni_harmonogramu.png  used on i
+nput line 596.
+(pdftex.def)             Requested size: 409.50119pt x 232.84721pt.
+[31
+pdfTeX warning (ext4): destination with the same identifier (name{figure.6}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.603 
+       <./images/nastaveni_vytvareni_harmonogramu.png>]
+<images/editor_leve_panely.png, id=323, 304.88907pt x 649.67719pt>
+File: images/editor_leve_panely.png Graphic file (type png)
+<use images/editor_leve_panely.png>
+Package pdftex.def Info: images/editor_leve_panely.png  used on input line 613.
+
+(pdftex.def)             Requested size: 163.79797pt x 349.04597pt.
+ [32] [33
+pdfTeX warning (ext4): destination with the same identifier (name{figure.7}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.626 
+       <./images/editor_leve_panely.png>]
+<images/editor_festivalovy_areal.png, id=335, 1444.64719pt x 812.28468pt>
+File: images/editor_festivalovy_areal.png Graphic file (type png)
+<use images/editor_festivalovy_areal.png>
+Package pdftex.def Info: images/editor_festivalovy_areal.png  used on input lin
+e 634.
+(pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 640--641
+
+ []
+
+[34
+pdfTeX warning (ext4): destination with the same identifier (name{figure.8}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.641 \paragraph
+                {PlynulÃ¡ simulace}\hfill\\ <./images/editor_festivalovy_areal.
+png>]
+Underfull \hbox (badness 10000) in paragraph at lines 641--642
+
+ []
+
+[35]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 6
+81.
+ (d:/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 (d:/texlive/2026/texmf-dist/tex/latex/listings/lstlang1.sty
@@ -1525,70 +1652,74 @@ File: lstlang3.sty 2025/11/14 1.11b listings language file
 File: lstmisc.sty 2025/11/14 1.11b (Carsten Heinz)
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 592.
+nput line 702.
 
-Overfull \hbox (11.6933pt too wide) in alignment at lines 616--678
+Overfull \hbox (11.6933pt too wide) in alignment at lines 726--788
  [] [] [] 
  []
 
-[26{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{d:/texlive/2026/t
-exmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dv
-ips/lm/lm-mathit.enc}]
-ignored: Infinite glue shrinkage found in box being split [27]
-ignored: Infi
-nite glue shrinkage found in box being split [28]
+
+ignored: Infinite glue shrinkage found in box being split [36{d:/texlive/2026/texmf-dist
+/fonts/enc/dvips/lm/lm-ts1.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/l
+m-rm.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}]
+ignored: Infinite
+ glue shrinkage found in box being split [37]
 Overfull \vbox (0.47247pt too high) has occurred while \output is active []
 
 
-[29] [30{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{d:/texliv
-e/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
-Overfull \hbox (12.74097pt too wide) in paragraph at lines 730--731
+[38] [39{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
+Overfull \hbox (12.74097pt too wide) in paragraph at lines 840--841
 \T1/lmr/m/n/12 Pro sazbu li-te-ra-tury má uºi-va-tel dv¥ moº-nosti. M·ºe po-u-º
 ít slu-ºeb ba-lík· \T1/lmr/m/sc/12 Bib\T1/lmr/m/n/12 L[]T[]X,
  []
 
 
 LaTeX Font Warning: Font shape `T1/lmr/bx/sc' undefined
-(Font)              using `T1/lmr/bx/n' instead on input line 731.
+(Font)              using `T1/lmr/bx/n' instead on input line 841.
 
-
-Overfull \hbox (33.70378pt too wide) in paragraph at lines 748--749
+[40{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
+Overfull \hbox (33.70378pt too wide) in paragraph at lines 858--859
 [][][][][][][][][][][]\T1/lmr/m/n/12 . Na da-nou zkratku se pak lze od-ka-zo-va
 t jed-no-du²e, []. 
  []
 
-[31]
+[41] [42
+pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has
+ been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.901 
+      ]
 \@gls@deffile=\write11
 \openout11 = `"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.glsdefs"'.
 
 Package hyperref Info: bookmark level for unknown definition defaults to 0 on i
-nput line 797.
+nput line 907.
 Package hyperref Info: bookmark level for unknown proof defaults to 0 on input 
-line 801.
- [32] [33]
+line 911.
 Package hyperref Info: bookmark level for unknown remark defaults to 0 on input
- line 805.
+ line 915.
 Package hyperref Info: bookmark level for unknown example defaults to 0 on inpu
-t line 809.
+t line 919.
 Package hyperref Info: bookmark level for unknown lemma defaults to 0 on input 
-line 813.
+line 923.
 Package hyperref Info: bookmark level for unknown consequence defaults to 0 on 
-input line 817.
+input line 927.
 Package hyperref Info: bookmark level for unknown theorem defaults to 0 on inpu
-t line 821.
- [34] [35] [36
+t line 931.
+ [43] [44] [45] [46
 
-] [37
+] [47
 
-] [38
+] [48
 
-] [39]
+] [49]
 No file "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".acr.
-[40
+[50
 
 ]
 
-LaTeX Warning: Empty bibliography on input line 950.
+LaTeX Warning: Empty bibliography on input line 1060.
 
 No file "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".ind.
 
@@ -1606,9 +1737,6 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 LaTeX Warning: There were undefined references.
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
 Package biblatex Warning: Please (re)run Biber on the file:
 (biblatex)                "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce"
 (biblatex)                and rerun LaTeX afterwards.
@@ -1619,10 +1747,10 @@ n.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 31613 strings out of 467349
- 588175 string characters out of 5419862
- 1709205 words of memory out of 5000000
- 60016 multiletter control sequences out of 15000+600000
+ 31764 strings out of 467349
+ 591689 string characters out of 5419862
+ 1711059 words of memory out of 5000000
+ 60141 multiletter control sequences out of 15000+600000
  697416 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  110i,11n,125p,2632b,2308s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1653,11 +1781,11 @@ t/fonts/type1/public/lm/lmr8.pfb><d:/texlive/2026/texmf-dist/fonts/type1/public
 t/fonts/type1/public/cm-super/sftt1200.pfb><d:/texlive/2026/texmf-dist/fonts/ty
 pe1/urw/courier/ucrb8a.pfb><d:/texlive/2026/texmf-dist/fonts/type1/urw/courier/
 ucrr8a.pfb>
-Output written on "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.pdf" (40 pages, 5538248 byt
-es).
+Output written on "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.pdf" (50 pages, 11749778 by
+tes).
 PDF statistics:
- 745 PDF objects out of 1000 (max. 8388607)
- 653 compressed objects within 7 object streams
- 180 named destinations out of 1000 (max. 500000)
- 552 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 850 PDF objects out of 1000 (max. 8388607)
+ 733 compressed objects within 8 object streams
+ 202 named destinations out of 1000 (max. 500000)
+ 627 words of extra memory for PDF output out of 10000 (max. 10000000)
 

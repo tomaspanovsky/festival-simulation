@@ -156,7 +156,7 @@ def validate_lineup_structure(data):
 
     return None
 
-def validate_highligh(stalls, stage):
+def validate_highligh(stalls, stage, meadows):
     errors = []
 
     for i in range(len(stalls)-1):
@@ -167,6 +167,11 @@ def validate_highligh(stalls, stage):
     for i in range(len(stage)-1):
         if stage[i] >= stage[i+1]:
             errors.append("Hodnoty u vytížení pódia musí být zadány od nejmenší po největší.")
+            break
+
+    for i in range(len(meadows)-1):
+        if meadows[i] >= meadows[i+1]:
+            errors.append("Hodnoty u obsazenosti louky na stanování musí být zadány od nejmenší po největší.")
             break
     
     return errors if errors else False

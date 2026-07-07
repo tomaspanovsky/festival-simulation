@@ -35,7 +35,7 @@ zone_rect = None
 zone_label = None
 zone_buttons = {}
 object_buttons = {}
-selected_zone_instance = None
+selected_zone = None
 selected_object = None
 selected_connect_zone = None
 selected_line = None
@@ -488,7 +488,7 @@ def run_app():
         bands_settings_frame.pack_forget()
         bands_generate_settings_frame.pack(fill="both", expand=True)
 
-        times_data = loading.load_settings(source.file_path_time_settings)
+        times_data = loading.load_settings(source.file_path_generate_lineup_settings)
 
         for key, entry in festival_times.items():
             entry_widget = entry[0]
@@ -581,6 +581,25 @@ def run_app():
         entry_stage_color_high["color"] = data["stage"]["colors"]["high"]
         stage_color_high_frame.children["!label"].config(bg=data["stage"]["colors"]["high"])
 
+
+        entry_meadows_low.delete(0, tk.END)
+        entry_meadows_low.insert(0, data["meadows"]["borders"]["low"])
+
+        entry_meadows_medium.delete(0, tk.END)
+        entry_meadows_medium.insert(0, data["meadows"]["borders"]["medium"])
+
+        entry_meadows_high.delete(0, tk.END)
+        entry_meadows_high.insert(0, data["meadows"]["borders"]["high"])
+
+        entry_meadows_color_low["color"] = data["meadows"]["colors"]["low"]
+        meadows_color_low_frame.children["!label"].config(bg=data["meadows"]["colors"]["low"])
+
+        entry_meadows_color_medium["color"] = data["meadows"]["colors"]["medium"]
+        meadows_color_medium_frame.children["!label"].config(bg=data["meadows"]["colors"]["medium"])
+
+        entry_meadows_color_high["color"] = data["meadows"]["colors"]["high"]
+        meadows_color_high_frame.children["!label"].config(bg=data["meadows"]["colors"]["high"])
+
     def open_opening_stalls_settings():
         main_frame.pack_forget()
         background_frame.pack(fill="both", expand=True)
@@ -654,7 +673,7 @@ def run_app():
         create_lineup_settings(num_days, lineup_frame)
 
     def generate_lineup():
-        times_settings = loading.load_settings(source.file_path_time_settings)
+        times_settings = loading.load_settings(source.file_path_generate_lineup_settings)
         main_settings = loading.load_settings(source.file_path_main_settings)
         num_days = main_settings["num_days"]
         num_bands = times_settings["num_bands"]
@@ -674,6 +693,8 @@ def run_app():
 
         saving.save_data(lineup, source.file_path_lineup)
         continue_button_generate.configure(state="normal")
+        continue_after_loading_lineup_button.configure(state="normal")
+        save_lineup_button.configure(state="normal")
 
         show_message("Lineup byl úspěšně vygenerován, nyní můžete pokračovat.")
         return lineup
@@ -810,7 +831,7 @@ def run_app():
             show_message(errors)
 
         else:
-            saving.save_data(festival_times, source.file_path_time_settings)
+            saving.save_data(festival_times, source.file_path_generate_lineup_settings)
             show_message("Nastavení uloženo")
 
     def save_highlighs():
@@ -833,7 +854,12 @@ def run_app():
 
         else:
             saving.save_data(opening_hours_settings, source.file_path_stalls_opening_hours)
-            show_message("Nastavení uloženo")
+            show_message("Nastavení uloženo.")
+    
+    def save_generated_lineup():
+        lineup = loading.load_settings(source.file_path_lineup)
+        saving.save_data_dialog(lineup)
+        show_message("Linuep úspěšně uložen.")
 
     def save():
         nonlocal loaded
@@ -841,7 +867,7 @@ def run_app():
         status = saving.save(zones_data)
 
         if status:
-            show_message("Festivalový areál úspěšně uložen")
+            show_message("Festivalový areál úspěšně uložen.")
             loaded = True
     
     def load():
@@ -860,7 +886,7 @@ def run_app():
             data = loading.load_festival_area(auto=True)
 
         except FileNotFoundError:
-            print("Dosud nebyl vytvořen žádný festivalový areál")
+            print("Dosud nebyl vytvořen žádný festivalový areá.")
             return
         
         else:
@@ -868,14 +894,14 @@ def run_app():
             loaded = True
 
     def delete():
-        global zones_data, selected_zone_instance, selected_object, selected_line
+        global zones_data, selected_zone, selected_object, selected_line
         global connect_start_zone, is_dragging_object, is_dragging_zone
         nonlocal loaded
 
         canvas.delete("all")
         zones_data = copy.deepcopy(zones_data_default)
 
-        selected_zone_instance = None
+        selected_zone = None
         selected_object = None
         selected_line = None
         connect_start_zone = None
@@ -1235,11 +1261,11 @@ def run_app():
         (9, "charging_stall", "Dobíjecí stan:", 2, 1, 10),
         (10, "charging_stall_mobile", "Dobíjecí stan - max počet telefonů:", 20, 1, 100),
         (11, "bungee_jumping", "Bungee-jumping:", 1, 1, 5),
-        (12, "rollercoaster", "Horská dráha:", 24, 10, 100),
+        (12, "rollercoaster", "Horská dráha (atrakce):", 24, 10, 100),
         (13, "bench", "Lavice (atrakce):", 20, 10, 100),
         (14, "hammer", "Kladivo (atrakce):", 32, 10, 100),
-        (15, "carousel", "Řetizkáč:", 32, 10, 100),
-        (16, "jumping_castle", "Skákací hrad:", 8, 1, 100),
+        (15, "carousel", "Řetízkový kolotoč (atrakce):", 32, 10, 100),
+        (16, "jumping_castle", "Skákací hrad (atrakce):", 8, 1, 100),
     ]
 
     cap_right_entries = {}
@@ -1299,7 +1325,7 @@ def run_app():
 
     tk.Label(stalls_opening_hours_frame, text="Nastavení provozní doby stánků", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=4, pady=30, padx=10)
 
-    tk.Label(stalls_opening_hours_frame, text="Otevírací doba", **label_style).grid(row=2, column=1, padx=(0,20))
+    tk.Label(stalls_opening_hours_frame, text="Otvírací doba", **label_style).grid(row=2, column=1, padx=(0,20))
     tk.Label(stalls_opening_hours_frame, text="Zavírací doba", **label_style).grid(row=2, column=2, padx=(0,20))
 
     tk.Label(
@@ -1317,7 +1343,7 @@ def run_app():
     entry_outside_close.grid(row=3, column=2)
 
 
-    tk.Label(stalls_opening_hours_frame, text="Otevírací doba", **label_style).grid(row=6, column=1, padx=(0,20))
+    tk.Label(stalls_opening_hours_frame, text="Otvírací doba", **label_style).grid(row=6, column=1, padx=(0,20))
     tk.Label(stalls_opening_hours_frame, text="Zavírací doba", **label_style).grid(row=6, column=2, padx=(0,20))
 
     tk.Label(stalls_opening_hours_frame,text="Provozní doba stánků ve festivalovém areálu:",**label_style).grid(row=7, column=0, sticky="w", padx=50)
@@ -1581,7 +1607,7 @@ def run_app():
 
     highlighs_settings = loading.load_settings(source.file_path_highlighs)
 
-    tk.Label(highlighs_settings_frame, text="Nastavení zvýraznění stánků", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=6, pady=(40, 40))
+    tk.Label(highlighs_settings_frame, text="Nastavení zvýraznění objektů", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=11, pady=(40, 40))
 
 
     tk.Label(highlighs_settings_frame, text="Fronty u stánků", **subtitle_label_style).grid(row=1, column=0, columnspan=3, pady=10)
@@ -1621,40 +1647,75 @@ def run_app():
     color_high_frame.grid(row=6, column=2)
 
 
-    tk.Label(highlighs_settings_frame, text="Zaplnění plochy u pódia", **subtitle_label_style).grid(row=1, column=3, columnspan=3, pady=10)
+    tk.Label(highlighs_settings_frame, text="Zaplnění plochy u pódia", **subtitle_label_style).grid(row=1, column=3, columnspan=4, pady=10)
 
-    tk.Label(highlighs_settings_frame, text="Od", **label_style).grid(row=2, column=4)
-    tk.Label(highlighs_settings_frame, text="Barva", **label_style).grid(row=2, column=5)
+    tk.Label(highlighs_settings_frame, text="Od", **label_style).grid(row=2, column=4, columnspan=2)
+    tk.Label(highlighs_settings_frame, text="Barva", **label_style).grid(row=2, column=6)
 
 
     tk.Label(highlighs_settings_frame, text="Nízká návštěvnost:", **label_style).grid(row=3, column=3, sticky="w", padx=50)
     entry_stage_low = tk.Entry(highlighs_settings_frame, **entry_style2)
     entry_stage_low.insert(0, highlighs_settings["stage"]["borders"]["low"])
     entry_stage_low.grid(row=3, column=4)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=3, column=5, sticky="w", padx=(2,0))
 
     stage_color_low_frame, entry_stage_color_low = make_color_picker(highlighs_settings_frame,highlighs_settings["stage"]["colors"]["low"])
-    stage_color_low_frame.grid(row=3, column=5)
+    stage_color_low_frame.grid(row=3, column=6)
 
     tk.Label(highlighs_settings_frame, text="Střední návštěvnost:", **label_style).grid(row=4, column=3, sticky="w", padx=50)
     entry_stage_medium = tk.Entry(highlighs_settings_frame, **entry_style2)
     entry_stage_medium.insert(0, highlighs_settings["stage"]["borders"]["medium"])
     entry_stage_medium.grid(row=4, column=4)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=4, column=5, sticky="w", padx=(2,0))
 
     stage_color_medium_frame, entry_stage_color_medium = make_color_picker(highlighs_settings_frame,highlighs_settings["stage"]["colors"]["medium"])
-    stage_color_medium_frame.grid(row=4, column=5)
+    stage_color_medium_frame.grid(row=4, column=6)
 
     tk.Label(highlighs_settings_frame, text="Vysoká návštěvnost:", **label_style).grid(row=5, column=3, sticky="w", padx=50)
     entry_stage_high = tk.Entry(highlighs_settings_frame, **entry_style2)
     entry_stage_high.insert(0, highlighs_settings["stage"]["borders"]["high"])
     entry_stage_high.grid(row=5, column=4)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=5, column=5, sticky="w", padx=(2,0))
 
     stage_color_high_frame, entry_stage_color_high = make_color_picker(highlighs_settings_frame, highlighs_settings["stage"]["colors"]["high"])
-    stage_color_high_frame.grid(row=5, column=5)
+    stage_color_high_frame.grid(row=5, column=6)
 
+    tk.Label(highlighs_settings_frame, text="Zaplnění louky na stanování", **subtitle_label_style).grid(row=1, column=7, columnspan=4, pady=10)
+
+    tk.Label(highlighs_settings_frame, text="Od", **label_style).grid(row=2, column=8, columnspan=2)
+    tk.Label(highlighs_settings_frame, text="Barva", **label_style).grid(row=2, column=10)
+
+
+    tk.Label(highlighs_settings_frame, text="Nízká zaplněnost:", **label_style).grid(row=3, column=7, sticky="w", padx=50)
+    entry_meadows_low = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_meadows_low.insert(0, highlighs_settings["meadows"]["borders"]["low"])
+    entry_meadows_low.grid(row=3, column=8)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=3, column=9, sticky="w", padx=(2,0))
+
+    meadows_color_low_frame, entry_meadows_color_low = make_color_picker(highlighs_settings_frame,highlighs_settings["meadows"]["colors"]["low"])
+    meadows_color_low_frame.grid(row=3, column=10)
+
+    tk.Label(highlighs_settings_frame, text="Střední zaplněnost:", **label_style).grid(row=4, column=7, sticky="w", padx=50)
+    entry_meadows_medium = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_meadows_medium.insert(0, highlighs_settings["meadows"]["borders"]["medium"])
+    entry_meadows_medium.grid(row=4, column=8)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=4, column=9, sticky="w", padx=(2,0))
+
+    meadows_color_medium_frame, entry_meadows_color_medium = make_color_picker(highlighs_settings_frame,highlighs_settings["meadows"]["colors"]["medium"])
+    meadows_color_medium_frame.grid(row=4, column=10)
+
+    tk.Label(highlighs_settings_frame, text="Vysoká zaplněnost:", **label_style).grid(row=5, column=7, sticky="w", padx=50)
+    entry_meadows_high = tk.Entry(highlighs_settings_frame, **entry_style2)
+    entry_meadows_high.insert(0, highlighs_settings["meadows"]["borders"]["high"])
+    entry_meadows_high.grid(row=5, column=8)
+    tk.Label(highlighs_settings_frame, text="%", **label_style).grid(row=5, column=9, sticky="w", padx=(2,0))
+
+    meadows_color_high_frame, entry_meadows_color_high = make_color_picker(highlighs_settings_frame, highlighs_settings["meadows"]["colors"]["high"])
+    meadows_color_high_frame.grid(row=5, column=10)
 
 
     bottom_highliths_settings_frame = tk.Frame(highlighs_settings_frame, bg="black")
-    bottom_highliths_settings_frame.grid(row=50, column=0, columnspan=6, pady=40)
+    bottom_highliths_settings_frame.grid(row=50, column=0, columnspan=11, pady=40)
 
     save_button = blue_button(bottom_highliths_settings_frame, "Uložit\nnastavení", save_highlighs)
     save_button.pack(side="left", padx=10)
@@ -1668,18 +1729,21 @@ def run_app():
         stalls_low = validation.validate_int_range("malá fronta", entry_stalls_low.get(), 1, 1000)
         stalls_medium = validation.validate_int_range("střední fronta", entry_stalls_medium.get(), 1, 1000)
         stalls_high = validation.validate_int_range("velká fronta", entry_stalls_high.get(), 1, 1000)
-        stage_low = validation.validate_int_range("nízké vytížení", entry_stage_low.get(), 1, 100000)
-        stage_medium = validation.validate_int_range("střední vytížení", entry_stage_medium.get(), 1, 100000)
-        stage_high = validation.validate_int_range("vysoké vytížení", entry_stage_high.get(), 1, 100000)
+        stage_low = validation.validate_int_range("nízká návštěvnost", entry_stage_low.get(), 1, 100)
+        stage_medium = validation.validate_int_range("střední návštěvnost", entry_stage_medium.get(), 1, 100)
+        stage_high = validation.validate_int_range("vysoká návštěvnost", entry_stage_high.get(), 1, 100)
+        meadows_low = validation.validate_int_range("nízká zaplněnost", entry_meadows_low.get(), 1, 100)
+        meadows_medium = validation.validate_int_range("střední zaplněnost", entry_meadows_medium.get(), 1, 100)
+        meadows_high = validation.validate_int_range("vysoká zaplněnost", entry_meadows_high.get(), 1, 100)
 
-        for value in [stalls_low, stalls_medium, stalls_high, stage_low, stage_medium, stage_high]:
+        for value in [stalls_low, stalls_medium, stalls_high, stage_low, stage_medium, stage_high, meadows_low, meadows_medium, meadows_high]:
             if isinstance(value, str):
                 errors.append(value)
 
         if errors:
             return errors
 
-        entry_validation = validation.validate_highligh([stalls_low, stalls_medium, stalls_high], [stage_low, stage_medium, stage_high])
+        entry_validation = validation.validate_highligh([stalls_low, stalls_medium, stalls_high], [stage_low, stage_medium, stage_high], [meadows_low, meadows_medium, meadows_high])
         
         if entry_validation:
             errors.append(entry_validation[0])
@@ -1711,6 +1775,19 @@ def run_app():
                     "low": entry_stage_color_low["color"],
                     "medium": entry_stage_color_medium["color"],
                     "high": entry_stage_color_high["color"]
+                }
+            },
+
+            "meadows": {
+                "borders":{
+                    "low": meadows_low,
+                    "medium": meadows_medium,
+                    "high": meadows_high
+                },
+                "colors": {
+                    "low": entry_meadows_color_low["color"],
+                    "medium": entry_meadows_color_medium["color"],
+                    "high": entry_meadows_color_high["color"]
                 }
             }
         }
@@ -1780,14 +1857,14 @@ def run_app():
     content_frame.place(relx=0.5, rely=0.5, anchor="center")
     
 
-    tk.Label(content_frame, text="Generování lineupu", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=7, pady=(20, 40))
+    tk.Label(content_frame, text="Nastavení generování lineupu", font=("Arial", 32, "bold"), bg="black", fg="white").grid(row=0, column=0, columnspan=3, pady=(20, 40), padx=20)
 
-    festival_times = loading.load_settings(source.file_path_time_settings)
+    festival_times = loading.load_settings(source.file_path_generate_lineup_settings)
 
     time_fields = [
-        (1, "band_time", "  Délka vystoupení kapely:", 60, " min.", 30, 75),
-        (2, "headliner_time", "  Délka vystoupení headlinera:", 90, " min.", 60, 120),
-        (3, "signing_time", "  Délka trvání autogramiád:", 30, " min.", 10, 60),
+        (1, "band_time", "  Délka vystoupení kapely:", 60, "min.", 30, 75),
+        (2, "headliner_time", "  Délka vystoupení headlinera:", 90, "min.", 60, 120),
+        (3, "signing_time", "  Délka trvání autogramiád:", 30, "min.", 10, 60),
         (4, "num_bands", "  Počet kapel na den:", 8, "", 5, 12),
         (5, "first_show_starts", "  Čas prvního koncertu dne:", "12:00", "", "10:00", "15:00"),
         (6, "last_show_ends", "  Konec posledního koncertu dne:", "23:00", "", "20:00", "02:00")
@@ -1796,7 +1873,7 @@ def run_app():
     for row, key, label, default, unit, min_value, max_value in time_fields:
 
         tk.Label(content_frame, text=label, **label_style).grid(
-            row=row, column=0, pady=10, sticky="w"
+            row=row, column=0, pady=10, padx=(20,0), sticky="w"
         )
 
         entry = tk.Entry(content_frame, **entry_style2)
@@ -1842,6 +1919,9 @@ def run_app():
     generate_lineup_button = blue_button_small(bottom_settings_times_frame, "Vygenerovat", generate_lineup, 14, True)
     generate_lineup_button.pack(side="left", padx=10)
 
+    save_lineup_button = blue_button_small(bottom_settings_times_frame, "Uložit\nlineup", save_generated_lineup, 14, True)
+    save_lineup_button.pack(side="left", padx=10)
+    save_lineup_button.configure(state="disabled")
 
     bottom_frame = ctk.CTkFrame(bands_generate_settings_frame, fg_color="black", corner_radius=30)
     bottom_frame.pack(side="bottom", pady=30)
@@ -1856,7 +1936,6 @@ def run_app():
     exit_button = red_button(bottom_frame, "Zavřít", exit_app)
     exit_button.pack(side="left", padx=10, pady=10)
 
-    
 
 #-------------------------------------------------------------------------OBRAZOVKA 9: Vytvoření lineupu-----------------------------------------------------------
 
@@ -1900,8 +1979,8 @@ def run_app():
         top_frame = tk.Frame(lineup_frame, bg="black")
         top_frame.pack(side="top", pady=30)
 
-        title = ctk.CTkLabel(top_frame, text=" Simulace hudebního festivalu ", font=("Segoe UI", 50, "bold"), fg_color="black", text_color="white")
-        title.pack()
+        title = ctk.CTkLabel(top_frame, text="Simulace hudebního festivalu ", font=("Segoe UI", 50, "bold"), fg_color="black", text_color="white")
+        title.pack(padx=10)
 
         center_frame = tk.Frame(lineup_frame, bg="black")
         center_frame.pack(expand=True, pady=20)
@@ -1909,7 +1988,7 @@ def run_app():
         notebook_wrapper = tk.Frame(center_frame, bg="black")
         notebook_wrapper.pack(anchor="center")
 
-        notebook = ttk.Notebook(notebook_wrapper, width=1270)
+        notebook = ttk.Notebook(notebook_wrapper, width=1270, height=650)
         notebook.pack()
 
         lineup_entries = {}
@@ -1941,91 +2020,99 @@ def run_app():
                     row_entries.append(e)
 
                 lineup_entries[day].append(row_entries)
+            
+            def save_lineup():
+                result = []
+                errors = []
+
+                for day, rows in lineup_entries.items():
+                    day_lineup = []
+                    band_index = 1
+
+                    for row in rows:
+                        band_name = row[0].get().strip()
+
+                        if band_name == "":
+                            continue
+                        
+                        else:
+                            start_play = validation.validate_time_string(headers[1], row[1].get().strip(), "00:00", "23:59")
+                            
+                            if "Hodnota" in start_play and start_play not in errors:
+                                errors.append(start_play)
+
+                            end_play = validation.validate_time_string(headers[2], row[2].get().strip(), "00:00", "23:59")
+                            
+                            if "Hodnota" in end_play and end_play not in errors:
+                                errors.append(end_play)
+                            
+                            start_sign = validation.validate_time_string(headers[3], row[3].get().strip(), "00:00", "23:59")
+                            
+                            if "Hodnota" in start_sign and start_sign not in errors:
+                                errors.append(start_sign)
+                            
+                            end_sign = validation.validate_time_string(headers[4], row[4].get().strip(), "00:00", "23:59")
+                            
+                            if "Hodnota" in end_sign and end_sign not in errors:
+                                errors.append(end_sign)
+                            
+                            if len(errors) >= 4:
+                                show_message(errors)
+                                return
+                        
+                        if errors:
+                            show_message(errors)
+                            return
+
+                        else:
+
+                            day_lineup.append({
+                                "band_name": band_name,
+                                "start_playing_time": start_play,
+                                "end_playing_time": end_play,
+                                "start_signing_session": start_sign,
+                                "end_signing_session": end_sign,
+                                "popularity": min((band_index * 10), 100) 
+                            }) 
+
+                            band_index += 1
+
+                    day_errors = validation.check_time_conflicts(day_lineup)
+
+                    if day_errors:
+                        show_message(day_errors)
+                        return
+                    
+                    else:
+                        result.append(day_lineup)
+
+                saving.save_data_dialog(result)
+                saving.save_data(result, source.file_path_lineup)
+                show_message("Lineup byl úspěšně vytvořen, můžete pokračovat")
+                continue_after_creation_lineup_button.configure(state="normal")
+                continue_after_loading_lineup_button.configure(state="normal")
+                continue_button_generate.configure(state="normal")
+
+            save_btn = blue_button(tab, "Uložit\nlineup", save_lineup)
+            save_btn.grid(row=MAX_BANDS+2, column=0, columnspan=5, pady=30)
 
         bottom_frame = tk.Frame(lineup_frame, bg="black")
         bottom_frame.pack(side="bottom", pady=30)
-
-        def save_lineup():
-            result = []
-            errors = []
-
-            for day, rows in lineup_entries.items():
-                day_lineup = []
-                band_index = 1
-
-                for row in rows:
-                    band_name = row[0].get().strip()
-
-                    if band_name == "":
-                        continue
-                    
-                    else:
-                        start_play = validation.validate_time_string(headers[1], row[1].get().strip(), "00:00", "23:59")
-                        
-                        if "Hodnota" in start_play and start_play not in errors:
-                            errors.append(start_play)
-
-                        end_play = validation.validate_time_string(headers[2], row[2].get().strip(), "00:00", "23:59")
-                        
-                        if "Hodnota" in end_play and end_play not in errors:
-                            errors.append(end_play)
-                        
-                        start_sign = validation.validate_time_string(headers[3], row[3].get().strip(), "00:00", "23:59")
-                        
-                        if "Hodnota" in start_sign and start_sign not in errors:
-                            errors.append(start_sign)
-                        
-                        end_sign = validation.validate_time_string(headers[4], row[4].get().strip(), "00:00", "23:59")
-                        
-                        if "Hodnota" in end_sign and end_sign not in errors:
-                            errors.append(end_sign)
-                        
-                        if len(errors) >= 4:
-                            show_message(errors)
-                            return
-                    
-                    if errors:
-                        show_message(errors)
-                        return
-
-                    else:
-
-                        day_lineup.append({
-                            "band_name": band_name,
-                            "start_playing_time": start_play,
-                            "end_playing_time": end_play,
-                            "start_signing_session": start_sign,
-                            "end_signing_session": end_sign,
-                            "popularity": min((band_index * 10), 100) 
-                        }) 
-
-                        band_index += 1
-
-                day_errors = validation.check_time_conflicts(day_lineup)
-
-                if day_errors:
-                    show_message(day_errors)
-                    return
-                
-                else:
-                    result.append(day_lineup)
-
-            saving.save_data_dialog(result)
-            show_message("Lineup byl úspěšně vytvořen, můžete pokračovat")
-            continue_after_creation_lineup_button.configure(state="normal")
-
-        save_btn = blue_button(bottom_frame, "Uložit\nlineup", save_lineup)
-        save_btn.pack(side="left", padx=10, pady=10)
 
         back_btn = blue_button(bottom_frame, "Zpět", go_back)
         back_btn.pack(side="left", padx=10, pady=10)
         
         continue_after_creation_lineup_button = green_button(bottom_frame, "Pokračovat", open_editor)
         continue_after_creation_lineup_button.pack(side="left", padx=10, pady=10)
-        continue_after_creation_lineup_button.configure(state="disabled")
 
         exit_btn = red_button(bottom_frame, "Zavřít", exit_app)
         exit_btn.pack(side="left", padx=10, pady=10)
+
+        if continue_after_loading_lineup_button._state == "disabled" and continue_button_generate._state == "disabled":
+            continue_after_creation_lineup_button.configure(state="disabled")
+
+        else:
+            continue_after_creation_lineup_button.configure(state="normal")
 
 #-------------------------------------------------------------------------OBRAZOVKA10: Editor-----------------------------------------------------------
 
@@ -2064,7 +2151,6 @@ def run_app():
     canvas.pack_propagate(False)
 
 
-    #EDITOR BUTTONS
     editor_buttons_frame = tk.Frame(editor_frame, bg="black")
     editor_buttons_frame.pack(pady=20)
 
@@ -2422,14 +2508,15 @@ def run_app():
 
 
                 if stall_name == "standing_at_stage":
+                    num_people_percentage = ((stall_stats["num_people_served"] / stall_stats["capacity"]) * 100)
 
-                    if stall_stats["num_people_served"] >= settings["stage"]["borders"]["high"]:
+                    if num_people_percentage >= settings["stage"]["borders"]["high"]:
                         border = "high"
                     
-                    elif stall_stats["num_people_served"] >= settings["stage"]["borders"]["medium"]:
+                    elif num_people_percentage >= settings["stage"]["borders"]["medium"]:
                         border = "medium"
                     
-                    elif stall_stats["num_people_served"] >= settings["stage"]["borders"]["low"]:
+                    elif num_people_percentage >= settings["stage"]["borders"]["low"]:
                         border = "low"
 
                     else:
@@ -2437,6 +2524,27 @@ def run_app():
 
                     if border:
                         canvas.itemconfig(item, fill=settings["stage"]["colors"][border])
+
+                    else:
+                        canvas.itemconfig(item, fill="")
+
+                elif stall_name == "meadow_for_living":
+                    num_tents_percentage = ((stall_stats["num_tents"] / stall_stats["capacity"]) * 100)
+
+                    if num_tents_percentage >= settings["meadows"]["borders"]["high"]:
+                        border = "high"
+                    
+                    elif num_tents_percentage >= settings["meadows"]["borders"]["medium"]:
+                        border = "medium"
+                    
+                    elif num_tents_percentage >= settings["meadows"]["borders"]["low"]:
+                        border = "low"
+
+                    else:
+                        border = None
+
+                    if border:
+                        canvas.itemconfig(item, fill=settings["meadows"]["colors"][border])
 
                     else:
                         canvas.itemconfig(item, fill="")
@@ -2622,7 +2730,7 @@ def run_app():
 
     def on_click(event):
         """Začátek kreslení zóny (pokud není vybraný objekt)."""
-        global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, current_mode, selected_zone_instance, selected_object, is_dragging_object, is_dragging_zone, connect_start_zone, selected_line
+        global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, current_mode, selected_zone, selected_object, is_dragging_object, is_dragging_zone, connect_start_zone, selected_line
 
 
         print("\n[CLICK] at", event.x, event.y, "mode:", current_mode)
@@ -2640,7 +2748,7 @@ def run_app():
             handle_inspect_click(event, controller)
     
     def handle_add_click(event):
-        global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, selected_zone_instance, selected_object, selected_line
+        global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, selected_zone, selected_object, selected_line
 
         # 1) musí být vybraná zóna
         if current_zone is None:
@@ -2679,19 +2787,27 @@ def run_app():
             zone_label = None
 
     def handle_edit_click(event):
-        global selected_object, selected_zone_instance, selected_line, is_dragging_object, is_dragging_zone, last_x, last_y
+        global selected_object, selected_zone, selected_line, is_dragging_object, is_dragging_zone, last_x, last_y
 
-        # 1) čára
         line = find_clicked_line(event)
+        obj = find_clicked_object(event)
+        zone = find_clicked_zone(event)
+        
         if line:
-            if selected_line:
-                canvas.itemconfig(selected_line["id"], width=2)
+            if selected_line and line != selected_line:
+                unhighlight_line(selected_line)
+
+            highlight_line(line)
             selected_line = line
-            canvas.itemconfig(line["id"], width=4)
+
+            if selected_object:
+                unhighlight_object(select_object)
+            
+            if selected_zone:
+                unhighlight_zone(selected_zone)
+
             return
 
-        # 2) objekt
-        obj = find_clicked_object(event)
         if obj:
             if selected_object and selected_object != obj:
                 unhighlight_object(selected_object)
@@ -2699,26 +2815,24 @@ def run_app():
             selected_object = obj
             highlight_object(obj)
 
-            if selected_object and selected_zone_instance:
-                unhighlight_zone(selected_zone_instance)
+            if selected_line:
+                unhighlight_line(selected_line)
+            
+            if selected_zone:
+                unhighlight_zone(selected_zone)
 
             is_dragging_object = True
             last_x, last_y = event.x, event.y
             return
-
-        # 3) zóna
-        zone = find_clicked_zone(event)
+        
         if zone:
-
-            # stejné jako teď, jen v samostatné funkci
             handle_zone_selection(zone, event)
             return
 
-        # 4) nic → odznačit vše
         clear_selection()
 
     def clear_selection():
-        global selected_object, selected_zone_instance, selected_line
+        global selected_object, selected_zone, selected_line
         
     
         if selected_object:
@@ -2726,21 +2840,21 @@ def run_app():
             selected_object = None
 
     
-        if selected_zone_instance:
-            unhighlight_zone(selected_zone_instance)
-            selected_zone_instance = None
+        if selected_zone:
+            unhighlight_zone(selected_zone)
+            selected_zone = None
 
         if selected_line:
-            canvas.itemconfig(selected_line["id"], width=2)
+            canvas.itemconfig(selected_line["id"], width=2, fill="black")
             selected_line = None
 
         print("Výběr zrušen")
     
     def handle_zone_selection(zone, event):
-        global selected_zone_instance, selected_object, selected_line
+        global selected_zone, selected_object, selected_line
         global is_dragging_zone, last_x, last_y
 
-        border_objects = ["Louka na stanování", "Toitoiky", "Stání u podia"]
+        border_objects = ["Louka na stanování", "Toitoiky", "Stání u pódia"]
 
         if selected_object:
 
@@ -2756,10 +2870,10 @@ def run_app():
             canvas.itemconfig(selected_line["id"], width=2)
             selected_line = None
 
-        if selected_zone_instance and selected_zone_instance != zone:
-            canvas.itemconfig(selected_zone_instance["rect_id"], outline="blue", width=3)
+        if selected_zone and selected_zone != zone:
+            canvas.itemconfig(selected_zone["rect_id"], outline="blue", width=3)
 
-        selected_zone_instance = zone
+        selected_zone = zone
         canvas.itemconfig(zone["rect_id"], outline="red", width=4)
         print(f"Označená zóna: {zone["type"]}")
 
@@ -2832,10 +2946,43 @@ def run_app():
         return None
     
     def highlight_object(obj):
+        canvas.itemconfig(obj["canvas_ids"][1], outline="red", width=3)
+
+    def unhighlight_object(obj):
+        global selected_object
+
+        if not obj:
+            return 
+                
         if isinstance(obj, list):
             obj = obj[0]
 
-        canvas.itemconfig(obj["canvas_ids"][1], outline="red", width=3)
+        border_objects = ["Louka na stanování", "Toitoiky", "Stání u podia"]
+
+        if obj["object"] not in border_objects:
+            canvas.itemconfig(obj["canvas_ids"][1], outline="", width=1)
+        else:
+            canvas.itemconfig(obj["canvas_ids"][1], outline="black", width=1)
+
+        selected_object = None
+
+    def highlight_zone(zone):
+        canvas.itemconfig(zone["react_id"], outline="red", width=3)
+
+    def unhighlight_zone(zone):
+        global selected_zone
+
+        canvas.itemconfig(zone["rect_id"], outline="blue", width=3)
+        selected_zone = None
+
+    def highlight_line(line):
+        canvas.itemconfig(line["id"], width=4, fill="red")
+    
+    def unhighlight_line(line):
+        global selected_line 
+
+        canvas.itemconfig(line["id"], width=2, fill="black")
+        selected_line = None
 
     def is_object_in_zone(zones_data, zone_name, object_name):
         zone = zones_data.get(zone_name)
@@ -2848,28 +2995,6 @@ def run_app():
                 return True
             
         return False
-
-    def unhighlight_object(obj):
-
-        if not obj:
-            return 
-                
-        if isinstance(obj, list):
-            obj = obj[0]
-
-        border_objects = ["Louka na stanování", "Toitoiky", "Stání u podia"]
-
-        # odznačit objekt
-        if obj["object"] not in border_objects:
-            canvas.itemconfig(obj["canvas_ids"][1], outline="", width=1)
-        else:
-            canvas.itemconfig(obj["canvas_ids"][1], outline="black", width=1)
-
-    def highlight_zone(zone):
-        canvas.itemconfig(zone["react_id"], outline="red", width=3)
-
-    def unhighlight_zone(zone):
-        canvas.itemconfig(zone["rect_id"], outline="blue", width=3)
 
     def handle_connect_click(event):
         """Obslouží connect mód."""
@@ -3374,38 +3499,38 @@ def run_app():
             return
 
         # pokud budeme měnit velikost zony
-        if selected_zone_instance and current_mode == "edit" and is_dragging_zone:
+        if selected_zone and current_mode == "edit" and is_dragging_zone:
             
             RESIZE_TOLERANCE_OBJ = 50
 
-            resize_info = selected_zone_instance.get("resize_info")
+            resize_info = selected_zone.get("resize_info")
             print("Resize info:" , resize_info)
             if resize_info:
-                old_left = selected_zone_instance["left"]
-                old_right = selected_zone_instance["right"]
-                old_top = selected_zone_instance["top"]
-                old_bottom = selected_zone_instance["bottom"]
+                old_left = selected_zone["left"]
+                old_right = selected_zone["right"]
+                old_top = selected_zone["top"]
+                old_bottom = selected_zone["bottom"]
                 old_coords = old_left, old_top, old_right, old_bottom
 
                 # upravíme souřadnice
                 if resize_info["left"]:
-                    selected_zone_instance["left"] += dx
+                    selected_zone["left"] += dx
                 if resize_info["right"]:
-                    selected_zone_instance["right"] += dx
+                    selected_zone["right"] += dx
                 if resize_info["top"]:
-                    selected_zone_instance["top"] += dy
+                    selected_zone["top"] += dy
                 if resize_info["bottom"]:
-                    selected_zone_instance["bottom"] += dy
+                    selected_zone["bottom"] += dy
 
-                l = selected_zone_instance["left"]
-                t = selected_zone_instance["top"]
-                r = selected_zone_instance["right"]
-                b = selected_zone_instance["bottom"]
+                l = selected_zone["left"]
+                t = selected_zone["top"]
+                r = selected_zone["right"]
+                b = selected_zone["bottom"]
 
-                selected_zone_instance["left"] = min(l, r)
-                selected_zone_instance["right"] = max(l, r)
-                selected_zone_instance["top"] = min(t, b)
-                selected_zone_instance["bottom"] = max(t, b)
+                selected_zone["left"] = min(l, r)
+                selected_zone["right"] = max(l, r)
+                selected_zone["top"] = min(t, b)
+                selected_zone["bottom"] = max(t, b)
 
                 other_zones = []
                 for zone_type, inst in zones_data.items():
@@ -3413,37 +3538,37 @@ def run_app():
                         other_zones.append(inst)
 
                 # pokud je překrytí, vrátíme staré souřadnice
-                if zone_overlaps(selected_zone_instance, other_zones):
-                    selected_zone_instance["left"], selected_zone_instance["top"], selected_zone_instance["right"], selected_zone_instance["bottom"] = old_coords
+                if zone_overlaps(selected_zone, other_zones):
+                    selected_zone["left"], selected_zone["top"], selected_zone["right"], selected_zone["bottom"] = old_coords
 
                 # omezíme posun, aby objekty zůstaly uvnitř
-                for obj in selected_zone_instance.get("objects", []):
+                for obj in selected_zone.get("objects", []):
                     obj_x, obj_y = obj["x"], obj["y"]
                     # pokud objekt vyjde mimo, vrátíme souřadnici zóny zpět
-                    if obj_x - RESIZE_TOLERANCE_OBJ < selected_zone_instance["left"]:
-                        selected_zone_instance["left"] = old_left
-                    if obj_x + RESIZE_TOLERANCE_OBJ > selected_zone_instance["right"]:
-                        selected_zone_instance["right"] = old_right
-                    if obj_y - RESIZE_TOLERANCE_OBJ < selected_zone_instance["top"]:
-                        selected_zone_instance["top"] = old_top
-                    if obj_y + RESIZE_TOLERANCE_OBJ > selected_zone_instance["bottom"]:
-                        selected_zone_instance["bottom"] = old_bottom
+                    if obj_x - RESIZE_TOLERANCE_OBJ < selected_zone["left"]:
+                        selected_zone["left"] = old_left
+                    if obj_x + RESIZE_TOLERANCE_OBJ > selected_zone["right"]:
+                        selected_zone["right"] = old_right
+                    if obj_y - RESIZE_TOLERANCE_OBJ < selected_zone["top"]:
+                        selected_zone["top"] = old_top
+                    if obj_y + RESIZE_TOLERANCE_OBJ > selected_zone["bottom"]:
+                        selected_zone["bottom"] = old_bottom
 
                 # aktualizujeme canvas
                 canvas.coords(
-                    selected_zone_instance["rect_id"],
-                    selected_zone_instance["left"],
-                    selected_zone_instance["top"],
-                    selected_zone_instance["right"],
-                    selected_zone_instance["bottom"]
+                    selected_zone["rect_id"],
+                    selected_zone["left"],
+                    selected_zone["top"],
+                    selected_zone["right"],
+                    selected_zone["bottom"]
                 )
 
                 # nadpis uprostřed nahoře
-                label_x = (selected_zone_instance["left"] + selected_zone_instance["right"]) / 2
-                label_y = selected_zone_instance["top"] - 12
-                canvas.coords(selected_zone_instance["label_id"], label_x, label_y)
+                label_x = (selected_zone["left"] + selected_zone["right"]) / 2
+                label_y = selected_zone["top"] - 12
+                canvas.coords(selected_zone["label_id"], label_x, label_y)
 
-                update_zone_lines(selected_zone_instance)
+                update_zone_lines(selected_zone)
 
                 last_x, last_y = event.x, event.y
 
@@ -3532,32 +3657,48 @@ def run_app():
 
 
     def delete_selected(event=None):
-        global selected_zone_instance, selected_object, selected_line
+        global selected_zone, selected_object, selected_line
 
         if selected_object:
-            
-            # smažeme z canvasu
-            extra = selected_object.get("extra", [])
-            for e in extra:
-                for cid in e.get("canvas_ids", []):
-                    canvas.delete(cid)
-            for cid in selected_object.get("canvas_ids", []):
-                canvas.delete(cid)
-
-            # odstraní z instance
-            for zone_type, inst in zones_data.items():
-                if inst and selected_object in inst.get("objects", []):
-                    inst["objects"].remove(selected_object)
+            delete_object(selected_object)
             selected_object = None
-            print("Objekt smazán")
 
         if selected_line:
             delete_line(selected_line["id"])
+            selected_line = None
 
-        if selected_zone_instance:
-            delete_zone(selected_zone_instance)
-            selected_zone_instance = None
+        if selected_zone:
+            delete_zone(selected_zone)
+            selected_zone = None
             return
+    
+    def delete_object(obj):
+        global zones_data
+
+        extra = obj.get("extra", [])
+
+        if obj["object"] == "Vstup":
+            lines = zones_data["Festivalový areál"]["lines"]
+
+            for line in lines:
+                entry_id = (line.get("other_zone", {}).get("entry", {}).get("id"))
+
+                if entry_id == obj["id"]:
+                    delete_line(line["id"])
+                    break
+                    
+        for e in extra:
+            for cid in e.get("canvas_ids", []):
+                canvas.delete(cid)
+
+        for cid in obj.get("canvas_ids", []):
+            canvas.delete(cid)
+        
+        for zone_type, inst in zones_data.items():
+            if inst and obj in inst.get("objects", []):
+                inst["objects"].remove(obj)
+
+        print("Objekt smazán")
 
     RESIZE_TOLERANCE = 20 
 
@@ -3566,7 +3707,6 @@ def run_app():
         canvas.delete(zone["rect_id"])
         canvas.delete(zone["label_id"])
 
-        # 2) Smazat všechny objekty v zóně
         for obj in zone.get("objects", []):
             for cid in obj.get("canvas_ids", []):
                 canvas.delete(cid)
@@ -3574,11 +3714,9 @@ def run_app():
                 for cid in extra.get("canvas_ids", []):
                     canvas.delete(cid)
 
-        # 3) Smazat všechny linky této zóny
         for line in zone.get("lines", []):
             canvas.delete(line["id"])
 
-        # 4) Odstranit zónu z dat
         for zone_type, inst in zones_data.items():
             if inst is zone:
                 zones_data[zone_type] = None

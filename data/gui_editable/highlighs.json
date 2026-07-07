@@ -15,9 +15,21 @@
     },
     "stage": {
         "borders": {
-            "low": 100,
-            "medium": 500,
-            "high": 1000
+            "low": 25,
+            "medium": 50,
+            "high": 90
+        },
+        "colors": {
+            "low": "#00ff00",
+            "medium": "#ffff00",
+            "high": "#FF0000"
+        }
+    },
+    "meadows": {
+        "borders": {
+            "low": 25,
+            "medium": 50,
+            "high": 90
         },
         "colors": {
             "low": "#00ff00",

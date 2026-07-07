@@ -1,0 +1,8 @@
+{
+    "band_time": 60,
+    "headliner_time": 90,
+    "signing_time": 30,
+    "num_bands": 8,
+    "first_show_starts": "11:00",
+    "last_show_ends": "01:00"
+}
