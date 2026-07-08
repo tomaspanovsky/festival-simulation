@@ -25,6 +25,7 @@ class Stall:
         self.positions = None
         self.opend = False
         self.string_opening_hours = None
+        self.color = ""
         
 
     def get_name(self):
@@ -64,10 +65,13 @@ class Stall:
         return self.positions[0]
     
     def get_img_id(self):
-        return self.canvas_ids[2]
+        return self.canvas_ids[1]
     
     def get_occupied_positions(self):
         return (len(self.positions)-1) - self.positions[0]
+    
+    def get_color(self):
+        return self.color
     
     def is_opend(self):
         return self.opend
@@ -80,6 +84,9 @@ class Stall:
 
     def set_string_opening_hours(self, opening_hours):
         self.string_opening_hours = opening_hours
+
+    def set_color(self, color):
+        self.color = color
     
     def get_capacity(self):
         if self.stall_name == "toitoi":
@@ -466,7 +473,6 @@ def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
             festival.set_possible_actions_situation(outside=True)
 
         message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě otevřel."
-        print(message)
         log_message(message)
 
         yield env.timeout(day[1] - env.now)
@@ -480,6 +486,5 @@ def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
             festival.set_possible_actions_situation(outside=False)
 
         message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě zavřel."
-        print(message)
         log_message(message)
 

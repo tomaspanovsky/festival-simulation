@@ -27,6 +27,7 @@ def log_visitor(visitor, message):
     log_message(message)
 
 def log_message(message):
+    #print(message)
     all_messages.append(message)
 
 def add_stalls_to_logs(stalls):

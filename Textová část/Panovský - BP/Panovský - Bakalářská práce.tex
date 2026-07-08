@@ -145,8 +145,7 @@ Simulace představuje užitečný prostředek pro zkoumání situací, které js
 Při návštěvách různých kulturních a hudebních akcí jsem se opakovaně setkával s dlouhými frontami a nedostatečně dimenzovanými obslužnými místy. Tyto zkušenosti ukázaly, jak náročné může být správné plánování kapacit a organizace provozu na podobných událostech. Problematika přetížených vstupů či pokladen se navíc pravidelně objevuje i v médiích, zejména v souvislosti s akcemi, u nichž došlo k výraznému nárůstu návštěvnosti oproti předchozím ročníkům. V takových situacích může nedostatečný počet vstupů nebo pokladen vést k dlouhým čekacím dobám a zhoršení celkového zážitku návštěvníků. Tyto skutečnosti mě přivedly k úvaze, zda by bylo možné podobné situace předem modelovat a tím organizátorům usnadnit rozhodování o vhodném počtu zdrojů. Motivací této práce je proto vytvořit jednoduchý simulační nástroj, který umožní předvídat vznik front a lépe porozumět dopadům různých organizačních rozhodnutí.
 
 \subsection{Struktura práce}
-První část práce se věnuje teoretickým základům diskrétní simulace, následuje popis knihovny SimPy a jejích klíčových prvků využitých při implementaci. Další kapitoly se zaměřují na návrh modelu festivalu, implementaci simulačního jádra a tvorbu grafického editoru, který umožňuje vizuální konfiguraci areálu. Závěrečná část obsahuje experimenty, vyhodnocení výsledků a diskusi nad možnostmi dalšího rozšíření.
-
+První část práce se věnuje teoretickým základům diskrétní simulace, následuje popis knihovny SimPy a jejích klíčových prvků využitých při implementaci. Další kapitoly se zaměřují na návrh modelu festivalu, implementaci simulačního jádra a tvorbu grafického editoru, který umožňuje vizuální konfiguraci areálu. Závěrečná část obsahuje výsledky simulace a diskusi nad možnostmi dalšího rozšíření.
 
 \section{Diskrétní simulace}
 V této kapitole si představíme principy diskrétní simulace a její základní stavební prvky. Zaměříme se zejména na pojem systému, jeho stavových proměných, a simulačního modelu, který tvoří základ pro další části této práce.
@@ -484,7 +483,29 @@ Základním prvkem knihovny je třída \texttt{Image}, která umožňuje otevře
 
 
 \section{Technická dokumentace}
+Technická dokumentace popisuje vnitřní strukturu aplikace, datové modely a principy fungování simulačního jádra. Cílem této části je přiblížit způsob, jakým jsou jednotlivé komponenty implementovány, jak spolu komunikují a jakým způsobem je realizována samotná simulace. Dokumentace se zaměřuje na klíčové prvky aplikace, jako je reprezentace a chování návštěvníků, práce se simulačním časem a hlavní rozhodovací algoritmy. 
+
 \subsection{Architektura aplikace}
+Aplikace je implementována jako samostatná desktopová aplikace v jazyce Python, která nevyžaduje připojení k internetu ani žádné externí služby. Celá aplikace běží lokálně a jednotlivé části aplikace spolu komunikují přímo prostřednictvím interních datových struktur.
+
+Uživatelské rozhraní je realizováno pomocí knihovny Tkinter a jejího rozšíření CustomTkinter, které zajišťují vykreslování oken, ovládacích prvků a interaktivních prvků editoru festivalového areálu. Logika aplikace je oddělena od grafické vrstvy, což umožňuje přehlednou správu dat a snadnější rozšiřování funkcionality.
+
+Aplikace je tvořena několika hlavními moduly: editorem festivalového areálu, modulem pro správu objektů a zón, generátorem lineupu, modulem reprezentace návštěvníků a simulačním jádrem. Editor umožňuje uživateli sestavit festivalový areál, který je následně předán simulačnímu jádru. Simulační jádro zpracovává čas, potřeby návštěvníků, jejich rozhodování, pohyb mezi zónami a interakce s objekty.
+
+Jednotlivé moduly jsou navrženy tak, aby byly co nejvíce nezávislé. Editor pracuje s datovými strukturami objektů a zón, zatímco simulační jádro pracuje s instancemi návštěvníků a jejich stavy. Výsledky simulace jsou průběžně předávány zpět grafické vrstvě, která je vizuálně zobrazuje uživateli.
+
+Tato architektura umožňuje snadné rozšiřování aplikace o nové typy objektů, zón, chování návštěvníků nebo vizualizační prvky, aniž by bylo nutné zásadně měnit strukturu celého systému.
+
+\subsection{Datové struktury}
+\subsubsection{Stuktura návštěvníka}
+\subsubsection{Struktura objektů}
+\subsubsection{Kapely}
+\subsubsection{Konfigurační soubory}
+\subsection{Simulační čas}
+\subsection{Chování návštěvníků}
+\subsubsection{Systém potřeb}
+\subsubsection{Rozhodovací algoritmus}
+\subsubsection{Vizualizace}
 
 Převod do odstínů šedi je realizován pomocí vlastní funkce \texttt{make\_gray()}, která pracuje s objektem \texttt{Image} z knihovny Pillow a vrací upravený obrázek, jenž je následně opět převeden na \texttt{PhotoImage}. 
 
@@ -511,7 +532,7 @@ Aplikaci je možné spustit v libovolném vývojovém prostředí podporujícím
 Nyní si představíme uživatelské rozhraní aplikace a možnosti nastavení simulace. Úvodní obrazovka aplikace obsahuje spodní panel se třemi základními ovládacími prvky, kterými jsou tlačítka \texttt{Nastavení}, \texttt{Pokračovat} a \texttt{Zavřít}. Tlačítko \texttt{Nastavení} otevře nabídku parametrů simulace, kde může uživatel upravit vstupní hodnoty, jako je počet návštěvníků nebo kolik dnů festival bude probíhat. Pomocí tlačítka \texttt{Pokračovat} se uživatel přesune k dalšímu kroku, ve kterém se nastavuje festivalový lineup. Tlačítko \texttt{Zavřít} slouží k ukončení aplikace. 
 
 \subsubsection{Nastavení simulace}
-Po kliknutí na tlačítko \texttt{Nastavení} se otevře základní konfigurační okno, ve kterém může uživatel definovat hlavní parametry simulace. Toto okno je zobrazeno na obrázku \ref{fig:nastaveni_1}. Uživatel zde nastavuje tři klíčové údaje: celkový počet návštěvníků, počet festivalových dní a čas zahájení simulace vyjádřený v hodinách. Čas zahájení představuje okamžik, ve kterém simulace začíná, tedy kolik hodin bude na festivalu v momentě spuštění simulace. Na základě tohoto údaje se následně vypočítá celková doba trvání simulace, která je určena počtem festivalových dní, přičemž jeden den odpovídá 1440 minutám. Simulace tedy začíná v definovaném čase a končí ve stejnou denní hodinu po uplynutí zadaného počtu dní. Hodnoty těchto základních parametrů se automaticky ověří a uloží ve chvíli, kdy uživatel ve spodní části obrazovky zvolí možnost \texttt{Pokračovat} a přesune se k dalšímu kroku konfigurace.
+Po kliknutí na tlačítko \texttt{Nastavení} se otevře základní konfigurační okno, ve kterém může uživatel definovat hlavní parametry simulace. Toto okno je zobrazeno na obrázku \ref{fig:nastaveni_1}. Uživatel zde nastavuje tři klíčové údaje: celkový počet návštěvníků, počet festivalových dní a čas zahájení simulace vyjádřený v hodinách. Čas zahájení představuje okamžik, ve kterém simulace začíná, tedy kolik hodin bude na festivalu v momentě spuštění simulace. Na základě tohoto údaje se následně vypočítá celková doba trvání simulace, která je určena počtem festivalových dní, přičemž jeden den odpovídá 1440 minutám. Simulace tedy začíná v definovaném čase a končí ve stejnou denní hodinu po uplynutí zadaného počtu dní. Hodnoty těchto základních parametrů se ověří a uloží ve chvíli, kdy uživatel ve spodní části obrazovky zvolí možnost \texttt{Pokračovat} a přesune se k dalšímu kroku konfigurace.
 
 Ve spodní části okna se nachází tlačítka umožňující přístup k rozšířeným možnostem nastavení, které uživateli poskytují detailnější konfiguraci jednotlivých aspektů simulace.
 
@@ -554,6 +575,7 @@ Pro zjednodušení modelu mají všechny kapely jednotnou cenu merche, avšak po
 
 \paragraph{Označení objektů}\hfill\\
 V rámci nastavení dostupného v okně zobrazeném na obrázku \ref{fig:nastaveni_zvyrazneni} může uživatel konfigurovat barevné označení objektů na festivalovém rovzvržení areálu, jehož vytvoření bude popsáno v následujících podkapitolách. Barevné označení je možné u stánků, plochy určené pro stání před pódiem a louky na stanování ve stanovém městečku. Jednotlivé objekty jsou na festivalovém plánku reprezentovány příslušnými emoji ikonami, některé se však nacházejí uprostřed obdélníku. Obdélníkový tvar se používá u objektů, které obsahují další objekty uvnitř, například louka na stanování, kde se v obedélníku nacházejí jednotlívé stany návštěvníků. V takovém případě se zvýraznění provádí vyplněním plochy uvnitř obdélníku zvolenou barvou. Většina ostatních stánků je zobrazena pouze ikonou, u nichž se zvýraznění realizuje vykreslením barevného kruhu pod ikonou.
+Po najetí kurzoru myši na ikonu objektu se nad objektem zobrazí jeho název.
 
 Zvýraznění stánků je rozděleno do čtyř kategorií: \texttt{Stánek je využíván}, \texttt{Malá fronta}, \texttt{Střední fronta} a \texttt{Velká fronta}. První z uvedených kategorií zvýrazní stánek zvolenou barvou ve chvíli, kdy k němu návštěvník přistoupí. Zbývající tři kategorie odpovídají počtu návštěvníků čekajících ve frontě u daného stánku. Uživatel může určit, od jakého počtu osob se má daná úroveň fronty zobrazit, a zároveň zvolit barvu, kterou bude stánek na plánku zvýrazněn. Například lze nastavit, že fronta o velikosti dvaceti osob bude označena jako velká a stánek se v takovém případě zvýrazní červenou barvou. Výběr barvy se provádí pomocí tlačítka \texttt{Vybrat}, které otevře dialog pro volbu barvy. Nalevo od tlačítka se nachází náhled aktuálně zvolené barvy. Stejný princip zvýrazňování je použit také u plochy před pódiem a u louky na stanování, kde může uživatel sledovat návštěvnost jednotlivých kapel nebo míru obsazenosti stanových míst. V těchto dvou případech se hodnoty nezadávají jako počet osob, ale jako procentuální zaplněnost dané plochy.
 
@@ -566,7 +588,7 @@ Zvýraznění stánků je rozděleno do čtyř kategorií: \texttt{Stánek je vy
 \end{figure}
 
 \subsubsection{Nastavení kapel}
-Po nastavení všech parametrů simulace lze pomocí tlačítka \texttt{Pokračovat} přejít k dalšímu kroku, kterým je konfigurace harmonogramu vystoupení kapel. Harmonogram je možné vytvořit ručně, načíst z dříve uloženého souboru, nebo automaticky vygenerovat pomocí vestavěného generátoru. Tlačítko \texttt{Pokračovat} ve spodním panelu obrazovky je nyní deaktivované a zpřístupní se až v okamžiku vytvoření, vygenerování či načtení časového harmonogramu kapel.
+Po nastavení všech parametrů simulace lze pomocí tlačítka \texttt{Pokračovat} přejít k dalšímu kroku, kterým je konfigurace harmonogramu vystoupení kapel. Harmonogram je možné vytvořit ručně, načíst z dříve uloženého souboru, nebo vygenerovat pomocí vestavěného generátoru. Tlačítko \texttt{Pokračovat} ve spodním panelu obrazovky je nyní deaktivované a zpřístupní se až v okamžiku vytvoření, vygenerování či načtení časového harmonogramu kapel.
 
 \paragraph{Generování harmonogramu}\hfill\\
 Po kliknutí na tlačítko \texttt{Vygenerování lineupu} se uživatel dostane do nabídky konfigurace generátoru časového harmonogramu (obrázek \ref{fig:nastaveni_generovani_harmonogramu} ). V této části lze nastavit délku vystoupení běžné kapely a \emph{headlinera}, přičemž headlinerem je vždy poslední kapela daného dne. Délka vystoupení headlinera se může v konečném výsledku mírně lišit od hodnoty zadané uživatelem, protože přestávky mezi jednotlivými koncerty jsou zaokrouhlovány dolů na nejbližší násobek deseti minut a vzniklý zbytkový čas je následně přičten k délce vystoupení headlinera. Tato úprava zajišťuje přehlednější časový harmonogram, ve kterém koncerty začínají i končí v přirozenější časy.
@@ -582,12 +604,12 @@ Po nastavení všech hodnot uživatel může vygenerovat časový harmonogram po
     \label{fig:nastaveni_generovani_harmonogramu}
 \end{figure}
 
-Generátor lineupu využívá seznam kapel uložený v souboru \texttt{/data/bands.json}. Každá kapela v tomto souboru obsahuje kromě názvu také atribut \texttt{popularity}, který slouží k určení pořadí kapel v rámci jednotlivých festivalových dnů. Při generování se pro každý den náhodně vybere uživatelem zadaný počet kapel, které jsou následně seřazeny podle popularity. Tímto způsobem je automaticky určena i role headlinera, jelikož headlinerem se stává kapela s nejvyšší popularitou. Datový soubor je možné libovolně rozšiřovat o další kapely, případně upravit hodnoty popularity. 
+Generátor lineupu využívá seznam kapel uložený v souboru \texttt{/data/bands.json}. Každá kapela v tomto souboru obsahuje kromě názvu také atribut \texttt{popularity}, který slouží k určení pořadí kapel v rámci jednotlivých festivalových dnů. Při generování se pro každý den náhodně vybere uživatelem zadaný počet kapel, které jsou následně seřazeny podle popularity. Tímto způsobem je určena i role headlinera, jelikož headlinerem se stává kapela s nejvyšší popularitou. Datový soubor je možné libovolně rozšiřovat o další kapely, případně upravit hodnoty popularity. 
 
 \paragraph{Vytvoření harmonogramu}\hfill\\
-Vytvoření časového harmonogramu ručně je možné v části \texttt{Vytvořit lineup}. Tato obrazovka aplikace umožňuje uživateli sestavit časový harmonogram vystoupení kapel manuálně. Rozhraní je rozděleno do jednotlivých festivalových dnů, mezi nimiž lze přepínat pomocí záložek. Každý den obsahuje tabulku, do níž uživatel zadává název kapely, čas začátku a konce koncertu a čas začátku a konce autogramiády. Tímto způsobem lze vytvořit vlastní lineup bez využití automatického generátoru nebo načítání z externího souboru.
+Vytvoření časového harmonogramu ručně je možné v části \texttt{Vytvořit lineup}. Tato obrazovka aplikace umožňuje uživateli sestavit časový harmonogram vystoupení kapel manuálně. Rozhraní je rozděleno do jednotlivých festivalových dnů, mezi nimiž lze přepínat pomocí záložek. Každý den obsahuje tabulku, do níž uživatel zadává název kapely, čas začátku a konce koncertu a čas začátku a konce autogramiády. Tímto způsobem lze vytvořit vlastní lineup bez využití generátoru harmonogramu nebo načítání z externího souboru.
 
-Uživatel může vyplnit libovolný počet řádků, minimálně však jeden a maximálně dvanáct řádků, což odpovídá maximálnímu počtu kapel na den i při automatickém generování harmonogramu. Je nutné vyplnit všechny hodnoty na daném řádku, a to i v případě, že uživatel neplánuje na festivalu pořádat autogramiády. Jednotlivé časy se navíc nesmí překrývat. Na obrázku~\ref{fig:nastaveni_vytvareni_harmonogramu.png} je znázorněno vyplnění formuláře pro první den festivalu, v němž vystoupí pouze tři kapely. Na rozdíl od automatického generování harmonogramu je při ručním vytvoření možné, aby měl každý festivalový den odlišný počet kapel. Při ručním vytváření harmonogramu se neuvádí popularita kapely, protože pořadí kapel i časy jejich vystoupení určuje uživatel. Popularita je však do interního souboru \texttt{data/lineup} doplněna automaticky. První kapela získá hodnotu popularity 10 a každá následující kapela v pořadí má popularitu zvýšenou o 10. Tento mechanismus slouží k tomu, aby kapely s vyšší popularitou měly v simulaci větší množství dostupného merche ve stánku s merchandisingem. 
+Uživatel může vyplnit libovolný počet řádků, minimálně však jeden a maximálně dvanáct řádků, což odpovídá maximálnímu počtu kapel na den i při generování harmonogramu. Je nutné vyplnit všechny hodnoty na daném řádku, a to i v případě, že uživatel neplánuje na festivalu pořádat autogramiády. Jednotlivé časy se navíc nesmí překrývat. Na obrázku~\ref{fig:nastaveni_vytvareni_harmonogramu.png} je znázorněno vyplnění formuláře pro první den festivalu, v němž vystoupí pouze tři kapely. Na rozdíl od automatického generování harmonogramu je při ručním vytvoření možné, aby měl každý festivalový den odlišný počet kapel. Při ručním vytváření harmonogramu se neuvádí popularita kapely, protože pořadí kapel i časy jejich vystoupení určuje uživatel. Popularita je však do interního souboru \texttt{data/lineup} doplněna při ukládání. První kapela získá hodnotu popularity 10 a každá následující kapela v pořadí má popularitu zvýšenou o 10. Tento mechanismus slouží k tomu, aby kapely s vyšší popularitou měly v simulaci větší množství dostupného merche ve stánku s merchandisingem. 
 
 Jakmile je harmonogram nastavený je zpřístupněno tlačítko \texttt{Pokračovat} v dolním panelu obrazovky. Můžeme tedy přejít na editaci festivalového areálu.
 
@@ -601,7 +623,7 @@ Jakmile je harmonogram nastavený je zpřístupněno tlačítko \texttt{Pokračo
 \subsubsection{Festivalový editor}
 Festivalový areál je interně uložen v souboru \texttt{data/festival\_settings}. Pokud se v tomto souboru nachází již dříve vytvořený a validní festivalový areál, je automaticky načten při vstupu do editoru festivalového areálu. V případě, že soubor neobsahuje žádná data nebo neexistuje, je uživateli zobrazen výchozí prázdný canvas.
 
-Editor se skládá ze dvou levých panelů (viz obrázek \ref{fig:editor_leve_panely}), centrálního canvasu a spodní lišty s ovládacími tlačítky. Tlačítko \texttt{Zpět} uživatele přesměruje na předchozí krok, tedy na nastavení kapel. Pomocí tlačítka \texttt{Uložit} lze aktuální podobu areálu uložit. Tlačítko \texttt{Načíst} umožňuje načíst již existující areál ze souboru. Funkce \texttt{Smazat} vymaže celý canvas a umožní uživateli začít s tvorbou areálu od začátku. Tlačítko \texttt{Start} přepne aplikaci do simulačního režimu a zároveň automaticky uloží festivalový areál do zmíněného interního souboru.
+Editor se skládá ze dvou levých panelů (viz obrázek \ref{fig:editor_leve_panely}), centrálního canvasu a spodní lišty s ovládacími tlačítky. Tlačítko \texttt{Zpět} uživatele přesměruje na předchozí krok, tedy na nastavení kapel. Pomocí tlačítka \texttt{Uložit} lze aktuální podobu areálu uložit. Tlačítko \texttt{Načíst} umožňuje načíst již existující areál ze souboru. Funkce \texttt{Smazat} vymaže celý canvas a umožní uživateli začít s tvorbou areálu od začátku. Tlačítko \texttt{Start} přepne aplikaci do simulačního režimu a zároveň automaticky uloží festivalový areál do již zmíněného interního souboru.
 
 Pro úspěšné přepnutí do simulačního režimu je nutné splnit minimální požadavky na strukturu festivalového areálu. Musí existovat zóna \texttt{Spawn\_zóna}, do níž návštěvníci při zahájení simulace přicházejí. Dále musí být na festivalu umístěn alespoň jeden stánek s jídlem a nealkoholickým pitím, (jakýkoliv stánek s pitím kromě stánku \texttt{Míchané drinky}). Součástí areálu musí být také bankomat, pokladna, toalety (objekt typu \texttt{toitoi}) a v zóně \texttt{Festivalový areál} musí být umístěno pódium. Všechny ostatní objekty jsou volitelné. Poslední podmínkou pro úspěšný přechod do simulačního režimu je, že jednotlivé zóny musí být navzájem propojeny. Následující část textu vysvětluje, jak tyto požadavky splnit. Napřed si ale představme jednotlivé zóny a jejich účel.
 
@@ -618,7 +640,7 @@ Zóny představují logické rozdělení festivalového areálu, přičemž kaž
 \paragraph{Vytváření rozložení festivalového areálu}\hfill\\
 Levý sloupec ovládacího panelu obsahuje výběr zón a režimů editace. Pravý sloupec zobrazuje seznam objektů, které je možné do jednotlivých zón umístit. Aktuálně vybraná zóna, režim a objekt jsou zvýrazněny žlutou barvou. Editor nabízí tři režimy práce: \texttt{Přidat}, \texttt{Editovat} a \texttt{Spojit}.
 
-Režim \texttt{Přidat} slouží k vytváření zón a vkládání objektů do zón. Každá zóna může být na festivalu pouze jednou a vytváří se kliknutím a tažením myši, čímž vznikne modrý obdélník představující její ohraničení. Vybraný objekt lze umístit pouze do plochy odpovídající zóny a přidává se prostým kliknutím do jejího prostoru.
+Režim \texttt{Přidat} slouží k vytváření zón a vkládání objektů do zón. Každá zóna může být na festivalu pouze jednou a vytváří se kliknutím a tažením myši, čímž vznikne modrý obdélník představující její ohraničení. Vybraný objekt lze umístit pouze do plochy odpovídající zóny a přidává se prostým kliknutím do jejího prostoru. 
 
 Režim \texttt{Editovat} umožňuje upravovat hranice zóny tažením myši za její hranu a rovněž přesouvat vložené objekty kliknutím, držením a tažením myši. Zóny a objekty vybrané v editačním režimu jsou zvýrazněny červeným ohraničením. V tomto režimu lze také kliknout na spojnici mezi zónami, která se následně rovněž zvýrazní červeně.
 
@@ -628,7 +650,7 @@ Zóna \texttt{Festivalový areál} může být propojena dvěma způsoby. První
 
 Objekt vstupu lze v editačním režimu přesouvat po hraně zóny pouze tehdy, pokud není spojen s žádnou jinou zónou. Hranou zóny lze pohybovat pouze v případě, že na ní není umístěn žádný vstup a zároveň se v její těsné blízkosti nenachází žádný objekt.
 
-Vybraný objekt, zónu nebo spojení mezi zónami lze smazat stiskem klávesy \texttt{Delete}. Smazáním vstupu se odstraní všechna jeho propojení. Smazáním zóny se odstraní všechny objekty uvnitř zóny i všechna její spojení. Na obrázku \ref{fig:editor_festivalovy_areal} je ukázka možného výsledného rozložení festivalového areálu.
+Vybraný objekt, zónu nebo spojení mezi zónami lze smazat stiskem klávesy \texttt{Delete}. Smazáním vstupu se odstraní všechna jeho propojení. Smazáním zóny se odstraní všechny objekty uvnitř zóny i všechna její spojení. Na obrázku \ref{fig:editor_festivalovy_areal} je ukázka možného výsledného rozložení festivalového areálu. Po vytvoření areálu můžeme pokračovat do simulační části aplikace stiskem tlačítka \texttt{Start}.
 
 \begin{figure}[H]
     \centering
@@ -638,32 +660,64 @@ Vybraný objekt, zónu nebo spojení mezi zónami lze smazat stiskem klávesy \t
 \end{figure}
 
 \subsubsection{Simulační režim}
+Při přechodu do simulačního režimu probíhá generování návštěvníků, z tohoto důvodu může při větším počtu návštěvníků přepnutí trvat několik vteřin. V simulačním režimu se u každé zóny v levém horním rohu zobrazí ukazatel aktuálního počtu návštěvníků v dané zóně. Změní se také levý panel. V jeho záhlaví najdeme informaci o aktuálním simulačním času a aktuálním festivalovém dnu. Pod záhlavím se nachází horní část panelu, ta nyní zobrazuje detailní informace o jednotlivých stáncích. Spodní část slouží jako výpis událostí, které se v simulaci právě odehrávají. Detail konkrétního objektu si uživatel zobrazí kliknutím na jeho ikonu. Tyto funkcionality budou podrobněji popsány později v podkapitole \texttt{Plynulá simulace}. V simulačním režimu není možné měnit rozmístění objektů ani jinak upravovat rozložení areálu. Současně se změní i spodní ovládací lišta, jejíž simulační verzi lze vidět na obrázku \ref{fig:simulace_spodni_lista}. Obsahuje mimo jiné tlačítko \texttt{Ukončit}, které simulaci ukončí a vrátí uživatele zpět do editoru.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/simulace_spodni_lista.png}
+    \caption{Spodní lišta v simulačním režimu}
+    \label{fig:simulace_spodni_lista}
+\end{figure}
 
+\paragraph{Rychlá simulace}\hfill\\
+Spodní lišta nabízí dva základní způsoby spuštění simulace. Prvním z nich je rychlá simulace, aktivovaná tlačítkem \texttt{Rychlá simulace}. V tomto režimu proběhne celá simulace zrychleně na pozadí a uživatel si následně může zobrazit dostupné výsledky dostupné ve složce \texttt{outpusts}.
 
-\paragraph{Automatická simulace}\hfill\\
 \paragraph{Plynulá simulace}\hfill\\
+Druhým způsobem je plynulá simulace, která se spouští tlačítkem \texttt{Plynulá simulace}. V tomto režimu běží simulace v reálném čase, kde jedna minuta simulace odpovídá jedné vteřině skutečného času. Uživatel může průběžně sledovat měnící se počty návštěvníků v jednotlivých zónách, barevné zvýraznění objektů při vzniku front či jejich vytíženosti, detaily objektů a také živé výpisy událostí ze simulace. Logy jsou zobrazovány s mírným zhruba minutovým zpožděním, protože vznikají během simulace dané minuty, ale jejich vykreslení probíhá až při následující aktualizaci GUI. Na obrázku \ref{fig:plynula_simulace_zacatek} je zachycen začátek plynulé simulace při nastavení festivalu na dva dny, začátek simulace v 8:00 a s celkovým počtem jednoho tisíce návštěvníků. V levém panelu je v horní části zobrazen detail \texttt{Pizza stánku}, u něhož se aktuálně nachází jeden návštěvník ve frontě a dva návštěvníci jsou právě obsluhováni. Zajímavým prvkem je červené zvýraznění louky na stanování ve stanovém městečku, které signalizuje vyčerpání kapacity pro umístění dalších stanů. V zóně \texttt{festivalový areál} lze zároveň pozorovat, že stánky obsluhující návštěvníky mají šedé ikony, což značí, že jsou v aktuálním času simulace zavřené. Po otevření detailu stánku \texttt{Pivní stánek} nacházejícího se v zóně \texttt{Festivalový areál} můžeme vidět, že otevření tohoto stánku nastane za osmnáct minut simulovaného času (viz obrázek \ref{fig:plynula_simulace_zavreny_stanek}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{images/plynula_simulace_zacatek.png}
+    \caption{Ukázka plynulé simulace}
+    \label{fig:plynula_simulace_zacatek}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/plynula_simulace_zavreny_stanek.png}
+    \caption{Ukázka plynulé simulace}
+    \label{fig:plynula_simulace_zavreny_stanek}
+\end{figure}
+
+Lišta dále nabízí možnost posunout simulaci o zadaný čas prostřednictvím rozhraní \texttt{Posunout simulaci o čas}. To obsahuje vstupní pole přijímající pouze celočíselné hodnoty. Po stisknutí zeleného tlačítka se simulace posune o zadaný počet minut dopředu. Hodnotu je možné upravovat také pomocí tlačítek po stranách vstupního pole, která umožňují její zvýšení či snížení o jednu jednotku.
+
+Během běhu plynulé simulace není možné přejít na rychlou simulaci a posovouvat simulační čas prostřednictvím rozhraní \texttt{Posunout simulaci o čas}, s výjimkou tlačítka \texttt{Plynulá simulace}, kterým lze simulaci pozastavit. Uživatel může simulaci kdykoliv spustit, zastavit, prozkoumat aktuální stav a opět pokračovat. Zbytek simulace lze případně dokončit zrychleně pomocí rychlé simulace, pokud je simulace pozastavená.
+
+Během plynulé simulace lze kdykoliv uložit aktuální stav simulace do souboru \texttt{outputs/simulation\_states.json} pomocí tlačítka \texttt{Uložit stav simulace}.
+
 \subsection{Výsledky simulace}
+Po dokončení simulace se zobrazí informativní zpráva oznamující její úspěšné dokončení. Po stisknutí tlačítka \texttt{Zavřít} je uživatel přesměrován zpět na úvodní obrazovku, odkud může zahájit novou simulaci.
 
 \section{Možná rozšíření}
+Aplikace v současné verzi využívá několik zjednodušení, která byla zvolena s ohledem na rozsah práce a přehlednost výsledného modelu. Je však zřejmé, že by bylo možné doplnit mnoho dalších funkcí a objektů, které by model dále rozšířili. Uvedený seznam možných rozšíření proto není konečný a představuje pouze nejvýznamnější směry, které se během vývoje nabízely.
+
+\begin{itemize}
+
+\item \textbf{Více typů zón} – Aktuální verze aplikace umožňuje použít každý typ zóny pouze jednou. Do budoucna by bylo možné rozšířit editor o více instancí stejných zón, například několik samostatných chill zón, více vstupních zón nebo více stanových městeček. Zároveň by bylo možné přidat i nové typy zón, jako například VIP zónu, technické zázemí, backstage, parkoviště, nebo zónu pro zdravotní službu. Tím by bylo možné modelovat rozsáhlejší a realističtější festivalové areály.
+
+\item \textbf{Více typů objektů} – Současná implementace obsahuje základní sadu objektů nezbytných pro běh simulace a typických pro téměř jakýkoliv hudební festival. Model by bylo možné rozšířit o další objekty, které by nabízeli návštěvníkům více dostupných aktivit. Zároveň je v aktuální verzi možné umístit pouze jedno pódium. Rozšíření o více pódií by umožnilo simulovat paralelní koncertní program.
+
+\item \textbf{Prvky infrastruktury} – V aktuální verzi simulace nejsou zahrnuty prvky interní infrastruktury festivalu, které mají zásadní vliv na jeho provoz. Do budoucna by bylo možné doplnit například zaměstnance festivalu, jako jsou členové bezpečnostní služby, zdravotníci, technici, dobrovolníci či pracovníci úklidu. Další možností je přidání objektů typu backstage, technické zázemí, skladovací prostory nebo servisní stanoviště. Tyto prvky by umožnily simulovat logistiku festivalu, pohyb personálu a jejich interakci s návštěvníky.
+
+\item \textbf{Ekonomický model simulace} – Současná verze aplikace pracuje pouze se základními cenami služeb a merchandisingu. Rozšíření o komplexnější ekonomický model by umožnilo sledovat finanční stránku festivalu, například celkové náklady na kapely, provoz stánků, pronájem areálu či mzdy zaměstnanců. Zároveň by bylo možné vyhodnocovat zisk jednotlivých stánků, celkový výnos festivalu, vliv nastavení cen na chování návštěvníků. Takové rozšíření by poskytlo detailnější pohled na ekonomickou udržitelnost festivalu.
+
+\item \textbf{Vnější vlivy} – Simulaci by bylo možné rozšířit o faktory, které ovlivňují průběh festivalu z vnějšího prostředí. Patří sem například počasí, které může ovlivnit návštěvnost, délku front nebo využití jednotlivých zón. Dalším příkladem jsou mimořádné události, bezpečnostní incidenty či technické poruchy. Tyto vlivy by umožnily simulovat krizové scénáře a testovat odolnost festivalového provozu.
+
+\item \textbf{Optimalizace vizuálního běhu simulace} – Plynulá simulace v aktuální implementaci průběžně aktualizuje vizuální stav celého festivalu, mění barvy a ikony objektů podle jejich vytížení, zobrazuje logy událostí a průběžně aktualizuje počty lidí v jednotlivých zónách. V kombinaci s Tkinterem, který není navržen pro časté a rozsáhlé aktualizace velkého množství grafických prvků, vede tento přístup k výraznému zatížení hlavního vlákna aplikace. Výsledkem je snížená plynulost, opožděné vykreslování a celkové sekání simulace při vyšším počtu návštěvníků. Oproti tomu rychlá simulace probíhá bez grafického rozhraní a díky absenci vizuálního vykreslování běží i při vysokém počtu návštěvníků zcela plynule. Možným rozšířením by mohlo být využití modernějších grafických knihoven, například PyGame nebo Kivy. Tyto úpravy by umožnily zachovat vizuální podobu simulace, ale zároveň výrazně zvýšit její plynulost a škálovatelnost.
+\end{itemize}
+
 \section{Závěr}
 
-Canvas je jeden z nejdůležitějších widgetů Tkinteru, protože umožňuje kreslení grafických objektů, práci s tvary, obrázky a detekci událostí myši. V této práci tvoří Canvas základ editoru festivalového areálu. Uživatel na něm může umisťovat objekty, přesouvat je, vybírat, propojovat nebo upravovat jejich vlastnosti. Canvas poskytuje funkce pro práci s bounding boxy, detekci kliknutí, překreslování a manipulaci s jednotlivými prvky, což umožňuje vytvářet interaktivní vizuální editor.
-
-
-
-Tyto prvky tvoří základní stavební kameny aplikace a umožňují vytvářet strukturované, interaktivní a vizuálně přehledné uživatelské rozhraní. 
-
-Tkinter pracuje na jednoduchém event‑driven modelu, kdy uživatelské akce (kliknutí, pohyb myši, změna hodnoty) generují události, které aplikace zpracovává. Celé rozhraní je řízeno hlavní smyčkou mainloop(), která neustále čeká na události a zajišťuje překreslování a aktualizaci GUI.
-
-
-Tyto základní widgety tvoří jádro grafického rozhraní a umožňují vytvářet strukturované, interaktivní a funkční GUI. V kombinaci s moderními prvky knihovny CustomTkinter poskytují dostatečnou flexibilitu pro tvorbu editoru i ovládacích panelů simulace.
-
-Klíčovým prvkem editoru festivalového areálu je widget Canvas, který umožňuje kreslení objektů, zón, jejich hranic a dalších grafických prvků. Canvas slouží jako interaktivní plocha, na kterou uživatel umisťuje objekty, vybírá je, přesouvá nebo propojuje. Tkinter zde poskytuje funkce pro detekci kliknutí, práci s bounding boxy, manipulaci s jednotlivými tvary a dynamické překreslování. Díky tomu je možné vytvářet vizuální editor, který reaguje na uživatelské akce v reálném čase.
-
-Tkinter však používá starší vizuální styl a jeho modernizace vyžaduje rozsáhlé ruční stylování. Některé moderní prvky, jako například kulaté rohy tlačítek, sjednocené barevné schéma nebo automatické DPI škálování, v Tkinteru nejsou dostupné. Z tohoto důvodu byla v této práci použita knihovna CustomTkinter, která představuje moderní nadstavbu nad Tkinterem. CustomTkinter zachovává plnou kompatibilitu se všemi Tkinter widgety, ale rozšiřuje je o moderní vzhled, tmavý režim, konzistentní styly, moderní tlačítka (CTkButton), rámečky (CTkFrame) a titulky (CTkLabel). Tyto prvky jsou využity zejména v úvodních obrazovkách, navigačních panelech a ovládacích částech simulace, kde je kladen důraz na vizuální přehlednost a moderní vzhled.
-
-V aplikaci jsou oba přístupy kombinovány: základní widgety jako Canvas, Frame, Label, Entry nebo Text pocházejí z Tkinteru, zatímco interaktivní a vizuálně výrazné prvky (tlačítka, přepínače, nadpisy, ovládací panely) jsou převzaty z CustomTkinteru. Tato kombinace umožňuje zachovat stabilitu a flexibilitu Tkinteru, ale zároveň využít moderní vzhled a komfort CustomTkinteru.
 
 
 

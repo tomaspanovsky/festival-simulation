@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.11)  7 JUL 2026 01:11
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.11)  8 JUL 2026 21:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1385,251 +1385,281 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 
 ] (./PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.toc [5
 
-])
+] [6])
 \tf@toc=\write9
 \openout9 = `"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.toc"'.
 
- [6]
+ [7]
 (./PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.lot)
 \tf@lot=\write10
 \openout10 = `"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.lot"'.
 
- [7
+ [8
 
-] [8
+] [9
 
-] [9] [10]
+] [10] [11]
 LaTeX Font Info:    Trying to load font information for T1+pcr on input line 19
-6.
+5.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
-) [11{d:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc}] [12]
-Overfull \hbox (116.09859pt too wide) in paragraph at lines 259--259
+) [12{d:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc}] [13]
+Overfull \hbox (116.09859pt too wide) in paragraph at lines 258--258
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se za£al pohybovat sm¥rem {d
 irection}")[] 
  []
 
 
-Overfull \hbox (29.69862pt too wide) in paragraph at lines 259--259
+Overfull \hbox (29.69862pt too wide) in paragraph at lines 258--258
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se zastavil a rozhlíºí se")[
 ] 
  []
 
-[13] [14]
+[14] [15]
 LaTeX Info: Symbol \textrightarrow not provided by
             font family pcr in TS1 encoding.
-            Default family used instead on input line 312.
+            Default family used instead on input line 311.
 
-Overfull \hbox (27.34918pt too wide) in paragraph at lines 314--315
+Overfull \hbox (27.34918pt too wide) in paragraph at lines 313--314
 \T1/lmr/m/n/12 Po prv-ním za-slání zprávy \T1/pcr/m/n/12 env.step() \T1/lmr/m/n
 /12 se spustí první pro-ces \T1/pcr/m/n/12 procesni_funkce_1
  []
 
-[15{d:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-Overfull \hbox (0.38646pt too wide) in paragraph at lines 328--330
+[16{d:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+Overfull \hbox (0.38646pt too wide) in paragraph at lines 327--329
  \T1/lmr/bx/n/12 3.1.4.1 Spe-ci-a-li-zo-vané udá-losti[] \T1/lmr/m/n/12 Z p°e-d
 e-²lých ka-pi-tol jiº víme, ºe \T1/pcr/m/n/12 Timeout
  []
 
 
-Overfull \hbox (11.24771pt too wide) in paragraph at lines 335--336
+Overfull \hbox (11.24771pt too wide) in paragraph at lines 334--335
 []\T1/lmr/m/n/12 U uºi-va-tel-sky de-fi-no-va-ných udá-lostí lze ex-pli-citn¥ v
 y-vo-lat je-jich na-stání. Jakmile
  []
 
-[16]
-Overfull \hbox (25.98703pt too wide) in paragraph at lines 343--344
+[17]
+Overfull \hbox (25.98703pt too wide) in paragraph at lines 342--343
 \T1/lmr/m/n/12 na-stat \T1/pcr/m/n/12 (not triggered)\T1/lmr/m/n/12 , má na-sta
 t \T1/pcr/m/n/12 (triggered)\T1/lmr/m/n/12 , nebo na-stala \T1/pcr/m/n/12 (proc
 essed)\T1/lmr/m/n/12 .
  []
 
-[17]
-Overfull \hbox (238.49854pt too wide) in paragraph at lines 385--385
+[18]
+Overfull \hbox (238.49854pt too wide) in paragraph at lines 384--384
 []            \T1/pcr/m/n/12 print(f"{env.now}: {name} je na pozici {position[n
 ame]} a za£al se pohybovat")[] 
  []
 
 
-Overfull \hbox (29.69862pt too wide) in paragraph at lines 385--385
+Overfull \hbox (29.69862pt too wide) in paragraph at lines 384--384
 []        \T1/pcr/m/n/12 print(f"{env.now}: {name} se zastavil a rozhlíºí se")[
 ] 
  []
 
 
-Overfull \hbox (72.73682pt too wide) in paragraph at lines 387--388
+Overfull \hbox (72.73682pt too wide) in paragraph at lines 386--387
 \T1/lmr/m/n/12 call-back· udá-losti po-mocí \T1/pcr/m/n/12 meeting_event.callba
 cks.append(meeting_callback)\T1/lmr/m/n/12 .
  []
 
-[18]
-Overfull \hbox (0.89864pt too wide) in paragraph at lines 404--404
+[19]
+Overfull \hbox (0.89864pt too wide) in paragraph at lines 403--403
 []\T1/pcr/m/n/12 Roboti se potkali na pozici  {'Robot A': 3, 'Robot B': 3}[] 
  []
 
-[19]
-Overfull \hbox (2.5941pt too wide) in paragraph at lines 435--436
+[20]
+Overfull \hbox (2.5941pt too wide) in paragraph at lines 434--435
 \T1/lmr/m/n/12 pro-ces·. Kaºdý sdí-lený zdroj ob-sa-huje ka-pa-citu, frontu pro
  vklá-dání \T1/pcr/m/n/12 put_queue\T1/lmr/m/n/12 ,
  []
 
 
-Overfull \hbox (29.74687pt too wide) in paragraph at lines 438--439
+Overfull \hbox (29.74687pt too wide) in paragraph at lines 437--438
 \T1/lmr/m/n/12 který ke kte-rému chceme p°i-stou-pit, nebo ho uvol-nit. Vo-lání
  \T1/pcr/m/n/12 request()/release()
  []
 
 
-Overfull \hbox (46.64969pt too wide) in paragraph at lines 440--441
+Overfull \hbox (46.64969pt too wide) in paragraph at lines 439--440
 \T1/pcr/m/n/12 Resource \T1/lmr/m/n/12 lze pro-vést jed-no-du-chým zp·-so-bem, 
 kdy po-mocí \T1/pcr/m/n/12 resource.request(req)
  []
 
-[20]
-Overfull \hbox (10.89821pt too wide) in paragraph at lines 469--470
+[21]
+Overfull \hbox (10.89821pt too wide) in paragraph at lines 468--469
 \T1/lmr/m/n/12 stup ke zdroji d°ív¥ neº po-ºa-davky s niº²í pri-o-ri-tou. Po-sl
 ední va-ri-an-tou \T1/pcr/m/n/12 Resources
  []
 
 
-Overfull \hbox (0.45605pt too wide) in paragraph at lines 472--473
+Overfull \hbox (0.45605pt too wide) in paragraph at lines 471--472
 \T1/lmr/m/n/12 Grafické uºi-va-tel-ské roz-hraní apli-kace je vy-tvo-°eno kom-b
 i-nací kniho-ven \T1/pcr/m/n/12 Tkinter
  []
 
-[21] [22] [23]
-<images/nastaveni_1.png, id=264, 1444.64719pt x 812.28468pt>
+[22] [23] [24] [25]
+<images/nastaveni_1.png, id=294, 1444.64719pt x 812.28468pt>
 File: images/nastaveni_1.png Graphic file (type png)
 <use images/nastaveni_1.png>
-Package pdftex.def Info: images/nastaveni_1.png  used on input line 520.
+Package pdftex.def Info: images/nastaveni_1.png  used on input line 541.
 (pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
- [24]
-<images/nastaveni_capacity.png, id=272, 1444.64719pt x 812.28468pt>
+ [26]
+<images/nastaveni_capacity.png, id=302, 1444.64719pt x 812.28468pt>
 File: images/nastaveni_capacity.png Graphic file (type png)
 <use images/nastaveni_capacity.png>
-Package pdftex.def Info: images/nastaveni_capacity.png  used on input line 532.
+Package pdftex.def Info: images/nastaveni_capacity.png  used on input line 553.
 
 (pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
- [25
+ [27
 pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.536 
+l.557 
        <./images/nastaveni_1.png>]
-<images/nastaveni_otviraci_doby.png, id=281, 864.98157pt x 455.45157pt>
+<images/nastaveni_otviraci_doby.png, id=310, 864.98157pt x 380.17032pt>
 File: images/nastaveni_otviraci_doby.png Graphic file (type png)
 <use images/nastaveni_otviraci_doby.png>
 Package pdftex.def Info: images/nastaveni_otviraci_doby.png  used on input line
- 542.
-(pdftex.def)             Requested size: 409.50119pt x 215.61897pt.
- [26
+ 563.
+(pdftex.def)             Requested size: 409.50119pt x 179.97948pt.
+ [28
 pdfTeX warning (ext4): destination with the same identifier (name{figure.2}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.546 
-       <./images/nastaveni_capacity.png>] [27
+l.570 
+      
 pdfTeX warning (ext4): destination with the same identifier (name{figure.3}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.557 
-       <./images/nastaveni_otviraci_doby.png>]
-<images/nastaveni_zvyrazneni.png, id=296, 1381.41093pt x 455.45157pt>
+l.570 
+       <./images/nastaveni_capacity.png> <./images/nastaveni_otviraci_doby.png>
+]
+<images/nastaveni_zvyrazneni.png, id=319, 1381.41093pt x 455.45157pt>
 File: images/nastaveni_zvyrazneni.png Graphic file (type png)
 <use images/nastaveni_zvyrazneni.png>
-Package pdftex.def Info: images/nastaveni_zvyrazneni.png  used on input line 56
-3.
+Package pdftex.def Info: images/nastaveni_zvyrazneni.png  used on input line 58
+5.
 (pdftex.def)             Requested size: 409.50119pt x 135.0103pt.
- [28
+ [29] [30
 pdfTeX warning (ext4): destination with the same identifier (name{figure.4}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.573 
+l.599 
        <./images/nastaveni_zvyrazneni.png>]
-<images/nastaveni_generovani_harmonogramu.png, id=304, 824.32968pt x 812.28468p
+<images/nastaveni_generovani_harmonogramu.png, id=332, 824.32968pt x 812.28468p
 t>
 File: images/nastaveni_generovani_harmonogramu.png Graphic file (type png)
 <use images/nastaveni_generovani_harmonogramu.png>
 Package pdftex.def Info: images/nastaveni_generovani_harmonogramu.png  used on 
-input line 580.
+input line 602.
 (pdftex.def)             Requested size: 409.50119pt x 403.51372pt.
- [29]
-Overfull \hbox (26.15523pt too wide) in paragraph at lines 585--586
+
+Overfull \hbox (26.15523pt too wide) in paragraph at lines 607--608
 []\T1/lmr/m/n/12 Generátor li-ne-upu vy-u-ºívá se-znam ka-pel ulo-ºený v sou-bo
 ru \T1/pcr/m/n/12 /data/bands.json\T1/lmr/m/n/12 .
  []
 
-[30
+[31
 pdfTeX warning (ext4): destination with the same identifier (name{figure.5}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.589 
+l.611 
        <./images/nastaveni_generovani_harmonogramu.png>]
 
-LaTeX Warning: Reference `fig:nastaveni_vytvareni_harmonogramu.png' on page 31 
-undefined on input line 590.
+LaTeX Warning: Reference `fig:nastaveni_vytvareni_harmonogramu.png' on page 32 
+undefined on input line 612.
 
-<images/nastaveni_vytvareni_harmonogramu.png, id=314, 998.22937pt x 567.62062pt
+<images/nastaveni_vytvareni_harmonogramu.png, id=339, 998.22937pt x 567.62062pt
 >
 File: images/nastaveni_vytvareni_harmonogramu.png Graphic file (type png)
 <use images/nastaveni_vytvareni_harmonogramu.png>
 Package pdftex.def Info: images/nastaveni_vytvareni_harmonogramu.png  used on i
-nput line 596.
+nput line 618.
 (pdftex.def)             Requested size: 409.50119pt x 232.84721pt.
-[31
+[32
 pdfTeX warning (ext4): destination with the same identifier (name{figure.6}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.603 
+l.625 
        <./images/nastaveni_vytvareni_harmonogramu.png>]
-<images/editor_leve_panely.png, id=323, 304.88907pt x 649.67719pt>
+<images/editor_leve_panely.png, id=347, 303.38344pt x 651.18282pt>
 File: images/editor_leve_panely.png Graphic file (type png)
 <use images/editor_leve_panely.png>
-Package pdftex.def Info: images/editor_leve_panely.png  used on input line 613.
+Package pdftex.def Info: images/editor_leve_panely.png  used on input line 635.
 
-(pdftex.def)             Requested size: 163.79797pt x 349.04597pt.
- [32] [33
+(pdftex.def)             Requested size: 163.79797pt x 351.5838pt.
+ [33] [34
 pdfTeX warning (ext4): destination with the same identifier (name{figure.7}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.626 
+l.648 
        <./images/editor_leve_panely.png>]
-<images/editor_festivalovy_areal.png, id=335, 1444.64719pt x 812.28468pt>
+<images/editor_festivalovy_areal.png, id=359, 1444.64719pt x 812.28468pt>
 File: images/editor_festivalovy_areal.png Graphic file (type png)
 <use images/editor_festivalovy_areal.png>
 Package pdftex.def Info: images/editor_festivalovy_areal.png  used on input lin
-e 634.
+e 657.
 (pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 640--641
-
- []
-
-[34
+ [35
 pdfTeX warning (ext4): destination with the same identifier (name{figure.8}) ha
 s been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.641 \paragraph
-                {PlynulÃ¡ simulace}\hfill\\ <./images/editor_festivalovy_areal.
-png>]
-Underfull \hbox (badness 10000) in paragraph at lines 641--642
+l.664 
+       <./images/editor_festivalovy_areal.png>]
+<images/simulace_spodni_lista.png, id=367, 913.91437pt x 82.80937pt>
+File: images/simulace_spodni_lista.png Graphic file (type png)
+<use images/simulace_spodni_lista.png>
+Package pdftex.def Info: images/simulace_spodni_lista.png  used on input line 6
+67.
+(pdftex.def)             Requested size: 409.50119pt x 37.10464pt.
+ [36
+pdfTeX warning (ext4): destination with the same identifier (name{figure.9}) ha
+s been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.677 
+       <./images/simulace_spodni_lista.png>]
+<images/plynula_simulace_zacatek.png, id=377, 1444.64719pt x 812.28468pt>
+File: images/plynula_simulace_zacatek.png Graphic file (type png)
+<use images/plynula_simulace_zacatek.png>
+Package pdftex.def Info: images/plynula_simulace_zacatek.png  used on input lin
+e 680.
+(pdftex.def)             Requested size: 409.50119pt x 230.2517pt.
+<images/plynula_simulace_zavreny_stanek.png, id=378, 302.63063pt x 328.22626pt>
 
- []
-
-[35]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 6
-81.
+File: images/plynula_simulace_zavreny_stanek.png Graphic file (type png)
+<use images/plynula_simulace_zavreny_stanek.png>
+Package pdftex.def Info: images/plynula_simulace_zavreny_stanek.png  used on in
+put line 687.
+(pdftex.def)             Requested size: 204.7506pt x 222.06903pt.
+ [37
+pdfTeX warning (ext4): destination with the same identifier (name{figure.10}) h
+as been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.693 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{figure.11}) h
+as been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.693 
+       <./images/plynula_simulace_zacatek.png> <./images/plynula_simulace_zavre
+ny_stanek.png>]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 7
+06.
  (d:/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
+) [38{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [39]
 (d:/texlive/2026/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2025/11/14 1.11b listings language file
 )
@@ -1652,74 +1682,75 @@ File: lstlang3.sty 2025/11/14 1.11b listings language file
 File: lstmisc.sty 2025/11/14 1.11b (Carsten Heinz)
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 702.
+nput line 760.
 
-Overfull \hbox (11.6933pt too wide) in alignment at lines 726--788
+Overfull \hbox (11.6933pt too wide) in alignment at lines 784--846
  [] [] [] 
  []
 
 
-ignored: Infinite glue shrinkage found in box being split [36{d:/texlive/2026/texmf-dist
-/fonts/enc/dvips/lm/lm-ts1.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/l
-m-rm.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}]
-ignored: Infinite
- glue shrinkage found in box being split [37]
+ignored: Infinite glue shrinkage found in box being split [40{d:/texlive/2026/texmf-dist
+/fonts/enc/dvips/lm/lm-rm.enc}{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm
+-mathit.enc}]
+ignored: Infinite glue shrinkage found in box being split [41]
 Overfull \vbox (0.47247pt too high) has occurred while \output is active []
 
 
-[38] [39{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
-Overfull \hbox (12.74097pt too wide) in paragraph at lines 840--841
+[42] [43{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{d:/texliv
+e/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
+Overfull \hbox (12.74097pt too wide) in paragraph at lines 898--899
 \T1/lmr/m/n/12 Pro sazbu li-te-ra-tury má uºi-va-tel dv¥ moº-nosti. M·ºe po-u-º
 ít slu-ºeb ba-lík· \T1/lmr/m/sc/12 Bib\T1/lmr/m/n/12 L[]T[]X,
  []
 
 
 LaTeX Font Warning: Font shape `T1/lmr/bx/sc' undefined
-(Font)              using `T1/lmr/bx/n' instead on input line 841.
+(Font)              using `T1/lmr/bx/n' instead on input line 899.
 
-[40{d:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
-Overfull \hbox (33.70378pt too wide) in paragraph at lines 858--859
+
+Overfull \hbox (33.70378pt too wide) in paragraph at lines 916--917
 [][][][][][][][][][][]\T1/lmr/m/n/12 . Na da-nou zkratku se pak lze od-ka-zo-va
 t jed-no-du²e, []. 
  []
 
-[41] [42
-pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has
- been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.901 
-      ]
+[44]
 \@gls@deffile=\write11
 \openout11 = `"PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.glsdefs"'.
 
 Package hyperref Info: bookmark level for unknown definition defaults to 0 on i
-nput line 907.
+nput line 965.
 Package hyperref Info: bookmark level for unknown proof defaults to 0 on input 
-line 911.
+line 969.
+ [45] [46
+pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has
+ been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.971 \end{proof}
+                 ]
 Package hyperref Info: bookmark level for unknown remark defaults to 0 on input
- line 915.
+ line 973.
 Package hyperref Info: bookmark level for unknown example defaults to 0 on inpu
-t line 919.
+t line 977.
 Package hyperref Info: bookmark level for unknown lemma defaults to 0 on input 
-line 923.
+line 981.
 Package hyperref Info: bookmark level for unknown consequence defaults to 0 on 
-input line 927.
+input line 985.
 Package hyperref Info: bookmark level for unknown theorem defaults to 0 on inpu
-t line 931.
- [43] [44] [45] [46
+t line 989.
+ [47] [48] [49
 
-] [47
+] [50
 
-] [48
+] [51
 
-] [49]
+] [52]
 No file "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".acr.
-[50
+[53
 
 ]
 
-LaTeX Warning: Empty bibliography on input line 1060.
+LaTeX Warning: Empty bibliography on input line 1118.
 
 No file "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce".ind.
 
@@ -1747,13 +1778,13 @@ n.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 31764 strings out of 467349
- 591689 string characters out of 5419862
- 1711059 words of memory out of 5000000
- 60141 multiletter control sequences out of 15000+600000
+ 31814 strings out of 467349
+ 592972 string characters out of 5419862
+ 1711219 words of memory out of 5000000
+ 60175 multiletter control sequences out of 15000+600000
  697416 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 110i,11n,125p,2632b,2308s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 110i,11n,125p,2632b,2392s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 pdfTeX warning (dest): name{section*.8} has been referenced but does not exist,
  replaced by a fixed one
@@ -1781,11 +1812,11 @@ t/fonts/type1/public/lm/lmr8.pfb><d:/texlive/2026/texmf-dist/fonts/type1/public
 t/fonts/type1/public/cm-super/sftt1200.pfb><d:/texlive/2026/texmf-dist/fonts/ty
 pe1/urw/courier/ucrb8a.pfb><d:/texlive/2026/texmf-dist/fonts/type1/urw/courier/
 ucrr8a.pfb>
-Output written on "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.pdf" (50 pages, 11749778 by
+Output written on "PanovskÃ½ - BakalÃ¡Å™skÃ¡ prÃ¡ce.pdf" (53 pages, 12710086 by
 tes).
 PDF statistics:
- 850 PDF objects out of 1000 (max. 8388607)
- 733 compressed objects within 8 object streams
- 202 named destinations out of 1000 (max. 500000)
- 627 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 931 PDF objects out of 1000 (max. 8388607)
+ 804 compressed objects within 9 object streams
+ 218 named destinations out of 1000 (max. 500000)
+ 722 words of extra memory for PDF output out of 10000 (max. 10000000)
 

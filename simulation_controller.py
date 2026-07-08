@@ -7,6 +7,7 @@ class SimulationController:
         self.festival = festival
         self.time_converter = time_converter
         self.shown_logs = 0
+        self.stalls_state_by_id = {}
         self.simulation_state = self.create_simulation_state(self.festival.get_stalls())
         self.auto_mode = False
         self.loaded = False
@@ -23,6 +24,12 @@ class SimulationController:
 
     def get_is_loaded(self):
         return self.loaded
+    
+    def get_stalls_state_by_id(self):
+        return self.stalls_state_by_id
+    
+    def add_to_stalls_state_by_id(self, id, data):
+        self.stalls_state_by_id[id] = data
         
     def move_forward_by_time(self, time):
         stop_time = self.festival_env.now + time
@@ -32,7 +39,6 @@ class SimulationController:
                 self.festival_env.step()
             else:
                 return True
-
 
     def start_smooth_simulation(self):
         self.auto_mode = True
@@ -80,8 +86,8 @@ class SimulationController:
                     simulation_state["zones"][zone_name]["stalls"][stall_name] = []
 
                 if stall_name == "standing_at_stage":
-                
-                    simulation_state["zones"][zone_name]["stalls"][stall_name].append({
+                    
+                    stats = {
                         "id": stall.get_id(),
                         "cz_name": stall.get_cz_name(),
                         "num_people_on_show": 0,
@@ -89,10 +95,13 @@ class SimulationController:
                         "num_people_in_the_middle": 0,
                         "num_people_in_back": 0,
                         "capacity": stall.get_capacity()
-                    })
+                    }
+
+                    simulation_state["zones"][zone_name]["stalls"][stall_name].append(stats)
 
                 elif stall_name == "charging_stall":
-                    simulation_state["zones"][zone_name]["stalls"][stall_name].append({
+
+                    stats = {
                         "id": stall.get_id(),
                         "cz_name": stall.get_cz_name(),
                         "num_people_served": 0,
@@ -102,19 +111,25 @@ class SimulationController:
                         "phones_currently_charging": 0,
                         "opend": stall.is_opend(),
                         "opening_hours": stall.get_string_opening_hours()
-                    })
+                    }
+
+                    simulation_state["zones"][zone_name]["stalls"][stall_name].append(stats)
 
                 elif stall_name == "meadow_for_living":
-                    simulation_state["zones"][zone_name]["stalls"][stall_name].append({
+
+                    stats = {
                         "id": stall.get_id(),
                         "cz_name": stall.get_cz_name(),
                         "num_tents": 0,
                         "num_people_in_tents": 0,
                         "capacity": stall.get_capacity()
-                    })
+                    }
+
+                    simulation_state["zones"][zone_name]["stalls"][stall_name].append(stats)
 
                 else:
-                    simulation_state["zones"][zone_name]["stalls"][stall_name].append({
+
+                    stats = {
                         "id": stall.get_id(),
                         "cz_name": stall.get_cz_name(),
                         "num_people_served": 0,
@@ -122,7 +137,11 @@ class SimulationController:
                         "capacity": stall.get_capacity(),
                         "opend": stall.is_opend(),
                         "opening_hours": stall.get_string_opening_hours()
-                    })
+                    }
+
+                    simulation_state["zones"][zone_name]["stalls"][stall_name].append(stats)
+
+                self.add_to_stalls_state_by_id(stall.get_id(), stats)
 
         return simulation_state
 

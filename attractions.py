@@ -47,7 +47,6 @@ class Attraction:
 
             self.switch_attraction_state()
             message = f"ČAS {self.time_converter.get_real_time()}: Atrakce {self.cz_name} zahajuje jízdu s počtem {self.current_riders} návštěvníků."
-            print(message)
             logs.log_message(message)
             
             yield self.env.timeout(self.attraction_data["duration"])
@@ -58,7 +57,6 @@ class Attraction:
 
             self.switch_attraction_state()
             message = f"ČAS {self.time_converter.get_real_time()}: Atrakce {self.cz_name} ukončila jízdu."
-            print(message)
             logs.log_message(message)
     
     def get_current_riders(self):

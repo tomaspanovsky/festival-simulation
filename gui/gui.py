@@ -3,7 +3,6 @@ from tkinter import ttk
 from tkinter import colorchooser
 import customtkinter as ctk
 from PIL import Image, ImageOps, ImageTk
-import textwrap
 import copy
 import simpy
 from gui import saving
@@ -47,6 +46,9 @@ default_loaded = False
 actual_day = False
 actual_time = False
 time_converter = False
+hover_text_id = None
+last_hover_check = 0
+last_gui_update = 0
 
 zones_data = {
     "Spawn zóna": {},
@@ -171,11 +173,6 @@ def run_app():
         create_zone_stats_labels()
         update_day_time_labels(1, main_settings["simulation_start_time"])
 
-
-        bands.print_lineup(lineup)
-        visitors.print_visitors(people)
-
-        
         message = f"ČAS {time_converter.get_real_time()}: START SIMULACE"
         print(message)
         logs.log_message(message)
@@ -349,7 +346,14 @@ def run_app():
         show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
 
     def move_forward_actions():
-        global time_converter
+        global time_converter, last_gui_update
+        
+        now = time.time()
+
+        if now - last_gui_update < 1:
+            return
+
+        last_gui_update = now
         festival = controller.get_festival()
         day = festival.get_actual_day()
         
@@ -755,7 +759,7 @@ def run_app():
         elif editor_frame.winfo_ismapped():
             editor_frame.pack_forget()
             background_frame.pack_forget()
-            main_frame.pack(fill="both", expand=True)
+            bands_settings_frame.pack(fill="both", expand=True)
 
         elif bands_settings_frame.winfo_ismapped():
             bands_settings_frame.pack_forget()
@@ -2243,8 +2247,18 @@ def run_app():
     # Funkce pro výběr režimu
 
     def select_mode(mode_name):
-        global current_mode
+        global current_mode, selected_zone, selected_object, selected_line
         current_mode = mode_name
+
+        if current_mode == "add" or current_mode == "connect":
+            if selected_zone:
+                unhighlight_zone(selected_zone)
+
+            if selected_object:
+                unhighlight_object(selected_object)
+
+            if selected_line:
+                unhighlight_line(selected_line)
 
         print(f"Režim vybrán: {current_mode}")
 
@@ -2263,11 +2277,11 @@ def run_app():
     for i, (mode_name, symbol) in enumerate(mode_icons.items()):
 
         # rámec pro label + tlačítko
-        btn_frame = tk.Frame(modes_frame)
+        btn_frame = tk.Frame(modes_frame, bg="white")
         btn_frame.pack(side="left", padx=5)
 
         # label nad tlačítkem
-        lbl = tk.Label(btn_frame, text=mode_labels_text.get(mode_name, ""), font=("Arial", 10))
+        lbl = tk.Label(btn_frame, text=mode_labels_text.get(mode_name, ""), font=("Arial", 10, "bold"), bg="white")
         lbl.pack()
 
         # tlačítko
@@ -2292,12 +2306,12 @@ def run_app():
             coords_list = []
 
             # hlavní tvar objektu
-            main_id = obj["canvas_ids"][1]
+            main_id = obj["canvas_ids"][0]
             coords_list.append(canvas.coords(main_id))
 
             # extra objekty (např. stání u podia)
             for extra in obj.get("extra", []):
-                extra_id = extra["canvas_ids"][1]
+                extra_id = extra["canvas_ids"][0]
                 coords_list.append(canvas.coords(extra_id))
 
             # projdeme všechny bounding boxy
@@ -2361,12 +2375,12 @@ def run_app():
     simulation_buttons_frame = tk.Frame(editor_frame, bg="black")
     simulation_buttons_frame.pack_forget()
 
-    # AUTOMATICKÁ SIMULACE
+    # RYCHLÁ SIMULACE
 
     automatic_simulation_buttons_frame = tk.Frame(simulation_buttons_frame, bg="black")
     automatic_simulation_buttons_frame.pack(side="left", padx=30)
 
-    automatic_simulation_label = ctk.CTkLabel(automatic_simulation_buttons_frame, text="Automatická simulace", font=("Arial", 20, "bold"), text_color="white", width=50)
+    automatic_simulation_label = ctk.CTkLabel(automatic_simulation_buttons_frame, text="Rychlá simulace", font=("Arial", 20, "bold"), text_color="white", width=50)
     automatic_simulation_label.pack(side="top", pady=8)
 
     automatic_simulation_start_button = green_button_small(automatic_simulation_buttons_frame, "▶", automatic_simulation)
@@ -2452,9 +2466,9 @@ def run_app():
             if zone:
                 text = "Návštěvníků v zóně: 0"
                 x_center = zone["left"]
-                y_label = zone["top"] - 8
+                y_label = zone["top"] - 10
 
-                label_id = canvas.create_text(x_center, y_label, text=text, fill="black", anchor="w", font=("Arial", 8, "bold"))
+                label_id = canvas.create_text(x_center, y_label, text=text, fill="black", anchor="w", font=("Arial", 10, "bold"))
                 zone["num_visitors_label_id"] = label_id
 
     def delete_zone_stats_labels():
@@ -2472,6 +2486,9 @@ def run_app():
         settings = loading.load_settings(source.file_path_highlighs)
         simulation_state = controller.get_simulation_state()
         stalls = controller.get_festival().get_stalls()
+        stall_state_by_id = controller.get_stalls_state_by_id()
+        new_color = ""
+
         location_map = {
             "Vstupní zóna": "ENTRANCE_ZONE",
             "Festivalový areál": "FESTIVAL_AREA",
@@ -2490,21 +2507,16 @@ def run_app():
 
                 stall_name = stall.get_name()
                 stall_id = stall.get_id()
+                stall_color = stall.get_color()
 
-                stall_list = simulation_state["zones"][zone_name]["stalls"][stall_name]
-
-                stall_stats = None
-                for s in stall_list:
-                    if s["id"] == stall_id:
-                        stall_stats = s
-                        break
+                stall_stats = stall_state_by_id[stall_id]
 
                 if stall_stats is None:
                     print(f"ERROR: Nenalezen stánek ID {stall_id} v zone {zone_name}")
                     continue
 
                 canvas_ids = stall.get_canvas_ids()
-                item = canvas_ids[1]
+                item = canvas_ids[0]
 
 
                 if stall_name == "standing_at_stage":
@@ -2522,11 +2534,8 @@ def run_app():
                     else:
                         border = None
 
-                    if border:
-                        canvas.itemconfig(item, fill=settings["stage"]["colors"][border])
+                    new_color = settings["stage"]["colors"][border] if border else ""
 
-                    else:
-                        canvas.itemconfig(item, fill="")
 
                 elif stall_name == "meadow_for_living":
                     num_tents_percentage = ((stall_stats["num_tents"] / stall_stats["capacity"]) * 100)
@@ -2543,11 +2552,7 @@ def run_app():
                     else:
                         border = None
 
-                    if border:
-                        canvas.itemconfig(item, fill=settings["meadows"]["colors"][border])
-
-                    else:
-                        canvas.itemconfig(item, fill="")
+                    new_color = settings["meadows"]["colors"][border] if border else ""
 
                 elif stall_name != "stage":
 
@@ -2566,11 +2571,11 @@ def run_app():
                     else:
                         border = None
                     
-                    if border:
-                        canvas.itemconfig(item, fill=settings["stalls"]["colors"][border])
+                    new_color = settings["stalls"]["colors"][border] if border else ""
 
-                    else:
-                        canvas.itemconfig(item, fill="")
+                if stall_color != new_color and stall_name != "stage":
+                    canvas.itemconfig(item, fill=new_color)
+                    stall.set_color(new_color)
 
     def uncolor_objects(OBJECT_IMAGES):
         stalls = controller.get_festival().get_stalls()
@@ -2578,7 +2583,7 @@ def run_app():
         for zone_name, zone_stalls in stalls.items():
             for stall in zone_stalls:
                 canvas_ids = stall.get_canvas_ids()
-                item = canvas_ids[1]
+                item = canvas_ids[0]
 
                 if stall.get_name() != "stage":
                     canvas.itemconfig(item, fill="")
@@ -2596,7 +2601,7 @@ def run_app():
                     else:
                         stall_cz_name = stall_cz_name[0].upper() + stall_cz_name[1:]
 
-                    img_id = canvas_ids[2]
+                    img_id = canvas_ids[1]
                     img_color = OBJECT_IMAGES[stall_cz_name][0]
                     canvas.itemconfig(img_id, image=img_color)
 
@@ -2673,14 +2678,14 @@ def run_app():
 
         if current_object == "Toitoiky":
             x1, y1, x2, y2 = coords_toiky
-            text_id = canvas.create_text(x, y - 40, text=current_object, fill="black", font=("Arial", 8, "bold"), anchor="center")
+            text_id = None
             shape_id = canvas.create_rectangle(*coords_toiky, fill="")
             img_id = canvas.create_image((x1 + x2) / 2, (y1 + y2) / 2, image=img)
 
 
         elif current_object == "Louka na stanování":
             x1, y1, x2, y2 = coords_camping
-            text_id = canvas.create_text(x, y - 65, text=current_object, fill="black", font=("Arial", 8, "bold"), anchor="center")
+            text_id = None
             shape_id = canvas.create_rectangle(*coords_camping, fill="")
             img_id = canvas.create_image((x1 + x2) / 2, (y1 + y2) / 2, image=img)
 
@@ -2696,37 +2701,105 @@ def run_app():
 
             img_id = canvas.create_image((x1s + x2s) / 2, (y1s + y2s) / 2, image=img)
 
-            text_id = canvas.create_text((x1s + x2s) / 2, y1s - 20, text=current_object, fill="black", font=("Arial", 8, "bold"), anchor="center")
+            text_id = None
             
             id_standing = object_id + 1
-            extra.append({"id": id_standing, "object": "Stání u podia", "canvas_ids": [stand_text_id, stand_id]})
+            extra.append({"id": id_standing, "object": "Stání u podia", "canvas_ids": [stand_id, stand_text_id]})
            
             
             shape_id = stage_id
             x1, y1, x2, y2 = coords_stage
 
-        
         else:
-
             size = 16
             x1 = x - size
             y1 = y - size
             x2 = x + size
             y2 = y + size
 
-            text_id = canvas.create_text(x, y - 20, text=current_object, fill="black", font=("Arial", 8, "bold"), anchor="center")
+            text_id = None
             shape_id = canvas.create_oval(x1, y1, x2, y2, outline="", fill="")
             img_id = canvas.create_image(x, y, image=img)
 
-        new_object = { "object": current_object, "id": object_id, "x": x, "y": y, "x1": x1, "y1": y1, "x2": x2, "y2": y2, "canvas_ids": [text_id, shape_id, img_id], "extra": extra}   
+        new_object = { "object": current_object, "id": object_id, "x": x, "y": y, "x1": x1, "y1": y1, "x2": x2, "y2": y2, "canvas_ids": [shape_id, img_id], "extra": extra}
+
+        canvas.addtag_withtag(f"obj_{object_id}", img_id)
+        canvas.addtag_withtag(f"obj_{object_id}", shape_id)
 
         if saved_object_id:
             object_id = object_id_backup
 
         if current_object == "Podium":
             object_id += 1
-
+        
+        canvas.bind("<Motion>", handle_hover)
         return new_object
+
+    def handle_hover(event):
+        global hover_text_id, last_hover_check
+        now = time.time()
+
+        if now - last_hover_check < 0.1:
+            return
+        
+        last_hover_check = now
+
+        items = canvas.find_overlapping(event.x, event.y, event.x, event.y)
+
+        if not items:
+            hide_hover_name()
+            return
+
+        obj = get_object_by_canvas_id(items)
+        if not obj:
+            hide_hover_name()
+            return
+
+        show_hover_name(obj)
+
+    def get_object_by_canvas_id(items):
+
+        for zone_type, zone in zones_data.items():
+            if not zone:
+                continue
+
+            for obj in zone.get("objects", []):
+                # každý objekt má canvas_ids
+                for cid in obj.get("canvas_ids", []):
+                    if cid in items:
+                        return obj
+
+        return None
+    
+    def show_hover_name(obj):
+        global hover_text_id
+
+        x = obj["x"]
+
+        if obj["object"] == "Podium":
+            y = obj["y"] - 35
+
+        elif obj["object"] == "Toitoiky":
+            y = obj["y"] - 35
+
+        else:
+            y = obj["y"] - 25
+
+        if hover_text_id is None:
+            hover_text_id = canvas.create_text(
+                x, y,
+                text=obj["object"],
+                fill="black",
+                font=("Arial", 10, "bold")
+            )
+        else:
+            return
+
+    def hide_hover_name():
+        global hover_text_id
+        if hover_text_id:
+            canvas.delete(hover_text_id)
+            hover_text_id = None
 
     def on_click(event):
         """Začátek kreslení zóny (pokud není vybraný objekt)."""
@@ -2859,10 +2932,10 @@ def run_app():
         if selected_object:
 
             if selected_object["object"] in border_objects:
-                canvas.itemconfig(selected_object["canvas_ids"][1], outline="black", width=1)
+                canvas.itemconfig(selected_object["canvas_ids"][0], outline="black", width=1)
 
             else:
-                canvas.itemconfig(selected_object["canvas_ids"][1], outline="", width=1)
+                canvas.itemconfig(selected_object["canvas_ids"][0], outline="", width=1)
 
             selected_object = None
 
@@ -2900,7 +2973,7 @@ def run_app():
 
             for obj in inst.get("objects", []):
             
-                geom_id = obj["canvas_ids"][1]
+                geom_id = obj["canvas_ids"][0]
                 coords = canvas.coords(geom_id)
 
                 x1, y1, x2, y2 = coords
@@ -2910,7 +2983,7 @@ def run_app():
                 if obj["object"] == "Podium":
                     obj = obj["extra"]
 
-                    geom_id = obj[0]["canvas_ids"][1]
+                    geom_id = obj[0]["canvas_ids"][0]
                     coords = canvas.coords(geom_id)
 
                     x1, y1, x2, y2 = coords
@@ -2946,7 +3019,7 @@ def run_app():
         return None
     
     def highlight_object(obj):
-        canvas.itemconfig(obj["canvas_ids"][1], outline="red", width=3)
+        canvas.itemconfig(obj["canvas_ids"][0], outline="red", width=3)
 
     def unhighlight_object(obj):
         global selected_object
@@ -2960,9 +3033,9 @@ def run_app():
         border_objects = ["Louka na stanování", "Toitoiky", "Stání u podia"]
 
         if obj["object"] not in border_objects:
-            canvas.itemconfig(obj["canvas_ids"][1], outline="", width=1)
+            canvas.itemconfig(obj["canvas_ids"][0], outline="", width=1)
         else:
-            canvas.itemconfig(obj["canvas_ids"][1], outline="black", width=1)
+            canvas.itemconfig(obj["canvas_ids"][0], outline="black", width=1)
 
         selected_object = None
 
@@ -3219,16 +3292,15 @@ def run_app():
         return False
     
     def is_near_line(x, y, x1, y1, x2, y2, tol=5):
-        """Vrátí True, pokud je bod (x, y) blízko úsečky (x1, y1, x2, y2) do tolerance tol."""
-        # pokud je čára vertikální/ horizontální zvlášť
+        """Vrátí True, pokud je bod (x, y) blízko úsečky (x1, y1, x2, y2)."""
+
         if x1 == x2 and y1 == y2:
             return abs(x - x1) <= tol and abs(y - y1) <= tol
         
-        # vzdálenost bodu od čáry (úsečky) podle vektorové projekce
-        # parametr t pro projekci bodu na čáru
+    
         dx, dy = x2 - x1, y2 - y1
         t = ((x - x1) * dx + (y - y1) * dy) / (dx*dx + dy*dy)
-        t = max(0, min(1, t))  # omezení na úsečku
+        t = max(0, min(1, t)) 
         nearest_x = x1 + t * dx
         nearest_y = y1 + t * dy
         dist = ((x - nearest_x)**2 + (y - nearest_y)**2)**0.5
@@ -3340,7 +3412,7 @@ def run_app():
             insert_in_box(stall_log_box, "Návštěvníků ve frontě: ", f"{data['num_people_in_queue']}\n")
             insert_in_box(stall_log_box, "Celková kapacita obsluhy stánku: ", f"{data['capacity']}\n")
             insert_in_box(stall_log_box, "Počet telefonů na nabíjení: ", f"{data["phones_currently_charging"]}\n")
-            insert_in_box(stall_log_box, "Počet volných pozic na nabíjení: ", f"{data["phones_free_positions"]}\n")
+            insert_in_box(stall_log_box, "Počet volných pozic na nabíjení: ", f"{data.get("phones_free_positions", data["phones_capacity"])}\n")
             insert_in_box(stall_log_box, "Celková kapacita telefonů: ", f"{data["phones_capacity"]}\n")
     
         elif stall_name == "signing_stall":
@@ -3405,6 +3477,8 @@ def run_app():
         """Aktualizace při tažení myší – kreslení zóny nebo přesun objektu."""
         global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, selected_object, is_dragging_object, is_dragging_zone, current_mode
         
+        hide_hover_name()
+
         if current_mode == "inspect":
             return
         
@@ -3565,7 +3639,7 @@ def run_app():
 
                 # nadpis uprostřed nahoře
                 label_x = (selected_zone["left"] + selected_zone["right"]) / 2
-                label_y = selected_zone["top"] - 12
+                label_y = selected_zone["top"] + 25
                 canvas.coords(selected_zone["label_id"], label_x, label_y)
 
                 update_zone_lines(selected_zone)
@@ -3590,8 +3664,8 @@ def run_app():
 
         zone_rect = canvas.create_rectangle(left, top, right, bottom, outline="blue", fill="white", width=3)
         zone_label_x = (left + right) / 2
-        zone_label_y = top - 12
-        zone_label = canvas.create_text(zone_label_x, zone_label_y, text=current_zone, fill="black", font=("Arial", 12, "bold"), anchor="s")
+        zone_label_y = top + 25
+        zone_label = canvas.create_text(zone_label_x, zone_label_y, text=current_zone, fill="black", font=("Arial", 15, "bold"), anchor="s")
 
 
     def on_release(event):
@@ -3643,7 +3717,7 @@ def run_app():
         zone_type = zone_instance["type"]
 
         rect_id = canvas.create_rectangle(left, top, right, bottom, outline="blue", fill="white", width=3)
-        label_id = canvas.create_text((left + right)/2, top-12, text=zone_type, fill="black", font=("Arial", 12, "bold"), anchor="s")
+        label_id = canvas.create_text((left + right)/2, top + 25, text=zone_type, fill="black", font=("Arial", 15, "bold"), anchor="s")
 
         zone_instance["rect_id"] = rect_id
         zone_instance["label_id"] = label_id
@@ -3657,7 +3731,12 @@ def run_app():
 
 
     def delete_selected(event=None):
-        global selected_zone, selected_object, selected_line
+        global selected_zone, selected_object, selected_line, current_mode
+
+        if current_mode == "inspect":
+            return
+
+        hide_hover_name()
 
         if selected_object:
             delete_object(selected_object)

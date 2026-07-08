@@ -13,7 +13,8 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
     id_tent = 0
     visitors = []
     visitors_groups = []
-    
+    base_speed = 0
+
     while num_visitors > 0:       
         #group_type = source.Groups.FAMILY 
         group_type = random.choice(list(source.Groups))
@@ -56,10 +57,13 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
                 match age_category:
                     case source.Age_category.YOUTH:
                         age = random.randint(15,25)
+                        base_speed = random.uniform(0.75, 1.0)
                     case source.Age_category.ADULT:
                         age = random.randint(26, 64)
+                        base_speed = random.uniform(0.5, 0.8)
                     case source.Age_category.SENIOR:
                         age = random.randint(65,80)
+                        base_speed = random.uniform(0.3, 0.6)
 
                 if age >= 18:
                     preference = {"alcohol_consumer" : random.choice([True, False]), "smoker" : random.choice([True, False]), "favourite_food" : random.choice(available_foods) if available_foods else None, "favourite_soft_drink" : random.choice(available_soft_drinks) if available_alcohol_drinks else None}
@@ -127,7 +131,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
 
                 num_visitors -= 1
                 
-                nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory)
+                nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory, base_speed=base_speed)
                 environment.process(nav.hygiene_routine())
                 environment.process(nav.cooldown_actions())
                 logs.add_visitor_to_logs(nav)
@@ -176,7 +180,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
                 fellows = [id_group_members, group_type]
 
                 if num_parents > 0:
-
+                    base_speed = random.uniform(0.5, 0.8)
                     num_parents -= 1
 
                     if mother != True:
@@ -187,7 +191,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
                         gender = source.Gender.MALE
                         father = True
                                 
-                                #nedočkavost
+
                     qualities = {"patience": random.randint(1,10), "tendency_to_spend" : random.randint(1,10), "hunger_frequency" : random.randint(1,10), "alcohol_tolerance" : random.randint(1,10)}
                     state = {"location" : None, "money" : random.randint(on_site_ticket_price, 10000), "pre_sale_ticket" : pre_sale_ticket, "tent_area_ticket": pre_sale_tent_area_ticket, "entry_bracelet" : False, "clean_teeth": True, "last_teeth_clean_time": 0, "clean_hands": True, "low_money": False, "group_mode": True, "energy": 100, "mood": 100, "hunger" : 100, "thirst": 100, "drunkenness": 0, "wc": 100, "hygiene": 100, "free_time" : 10}
                     preference = {"alcohol_consumer" : random.choice([True, False]), "smoker" : random.choice([True, False]), "favourite_food" : random.choice(available_foods) if available_foods else None, "favourite_soft_drink" : random.choice(available_soft_drinks) if available_soft_drinks else None}
@@ -232,7 +236,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
 
                     num_visitors -= 1
 
-                    nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory)    
+                    nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory, base_speed=base_speed)    
                     environment.process(nav.hygiene_routine())
                     environment.process(nav.cooldown_actions())
                     logs.add_visitor_to_logs(nav)
@@ -240,6 +244,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
                     group_members.append(nav)
 
                 else:
+                    base_speed = random.uniform(0.2, 0.5)
                     gender = random.choice(list(source.Gender))
                     qualities = {"patience": random.randint(1,10), "tendency_to_spend" : random.randint(1,10), "hunger_frequency" : random.randint(1,10), "alcohol_tolerance" : random.randint(1,10)}
                     state = {"location" : None, "money" : random.randint(on_site_ticket_price, 10000), "pre_sale_ticket" : pre_sale_ticket, "tent_area_ticket": pre_sale_tent_area_ticket, "entry_bracelet" : False, "clean_teeth": True, "last_teeth_clean_time": 0, "clean_hands": True, "low_money": False, "group_mode": True, "energy": 100, "mood": 100, "hunger" : 100, "thirst": 100, "drunkenness": 0, "wc": 100, "hygiene": 100, "free_time" : 10}
@@ -264,7 +269,7 @@ def create_visitors(num_visitors, environment, available_foods, available_soft_d
 
                     num_visitors -= 1
 
-                    nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory)    
+                    nav = simulation.Visitor(environment, id, name=name, surname=surname, gender=gender, age_category = age_category, age = age, qualities = qualities, state = state, preference = preference, accommodation = accommodation, fellows = fellows, inventory = inventory, base_speed=base_speed)    
                     environment.process(nav.hygiene_routine())
                     environment.process(nav.cooldown_actions())
                     logs.add_visitor_to_logs(nav)

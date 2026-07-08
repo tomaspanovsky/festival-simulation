@@ -19,6 +19,8 @@ class Group:
         self.result_for_children = None
         self.num_of_children = self.get_num_children()
         self.children_processed = 1
+        self.group_walking_speed = None
+        self.individuals_walking_speed = {}
         self.group_goal = None
         self.group_target_zone = None
         self.group_actual_zone = None
@@ -38,6 +40,17 @@ class Group:
 
     def get_group_object(self):
         return self.group_object
+
+    def get_individual_walking_speed(self, member):
+        speed = self.individuals_walking_speed[member]
+        del self.individuals_walking_speed[member]
+        return speed
+    
+    def add_individual_walking_speed(self, member, speed):
+        if member in self.individuals_walking_speed:
+            del self.individuals_walking_speed[member]
+        
+        self.individuals_walking_speed[member] = speed
 
     def set_group_is_ready_event(self):
         self.group_is_ready = self.env.event()
@@ -71,6 +84,12 @@ class Group:
     
     def set_group_need(self, need):
         self.group_need = need
+    
+    def set_group_walking_speed(self, speed):
+        self.group_walking_speed = speed
+
+    def get_group_walking_speed(self):
+        return self.group_walking_speed
 
     def get_children_processed(self):
         return self.children_processed
@@ -101,16 +120,48 @@ class Group:
 
     def notify_member_arrived(self):
         self.members_arrived += 1
-
-        print(f"[GROUP {self.id}] jeden člen skupiny dorazil → {self.members_arrived}/{self.members_needed}")
         
         if self.members_arrived == self.members_needed:
             self.group_is_ready.succeed()
+
+    def count_group_walking_speed(self, members, festival, in_zone, solo=None):
+        if in_zone:
+            base_time = random.randint(1,2)
+        else:
+            base_time = random.randint(2,4)
+
+        num_people_at_festival = loading.load_settings(source.file_path_main_settings)["num_visitors"]
+        num_people_in_zones = festival.get_num_people_in_zones()
+        num_people_in_zone = num_people_in_zones[self.get_group_actual_zone()]
+        people_in_zone_percentage = num_people_in_zone / num_people_at_festival
+        group_speed = 0
+
+        for member in members:
+            group_speed += member.get_actual_speed()
+
+        group_speed /= len(members)
+        zone_factor = 1 + people_in_zone_percentage * 0.5
+
+        if solo:
+            self.add_individual_walking_speed(members[0], base_time / group_speed * zone_factor)
+        else:
+            self.set_group_walking_speed(base_time / group_speed * zone_factor) 
 
     def start_action(self, controller, member, action, child_asistance=None, group=None):
         """Tato funkce pro daného návštěvníka spustí zvolenou akci"""
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
+        travel_time = 0
+
+        if self.type == source.Groups.INDIVIDUAL or self.type == source.Groups.FAMILY:
+            travel_time = self.get_group_walking_speed()
+
+        elif self.type == source.Groups.GROUP:
+
+            if member in self.individuals_walking_speed:
+                travel_time = self.get_individual_walking_speed(member)
+            else:
+                travel_time = self.get_group_walking_speed()
 
         direct_connections = ["GO_TO_SPAWN_ZONE", "GO_TO_ENTRANCE_ZONE", "GO_TO_CHILL_ZONE", "GO_TO_FUN_ZONE", "GO_TO_FESTIVAL_AREA"]
 
@@ -120,7 +171,7 @@ class Group:
         if action in direct_connections:
             location = action.replace("GO_TO_", "")
             location = source.Locations[location]
-            yield self.env.process(member.go_to(location, controller))
+            yield self.env.process(member.go_to(location, controller, travel_time))
 
         elif action == "DO_NOTHING":
             yield self.env.process(member.do_nothing(controller))
@@ -130,23 +181,17 @@ class Group:
             entrances = resources.find_stalls_in_zone(self, festival, "entrances")
             entry = member.get_best_entry(entrances)
 
-            if entry is None:
-
-                message = f"ČAS {time_converter.get_real_time()}: CHYBA! {member.name} {member.surname} nemůže jít z {member.state["location"].value} do festivalového areálu!"
-                print(message)
-                logs.log_visitor(member, message)
-
-            yield self.env.process(member.go_to_festival_area(entry, controller))
+            yield self.env.process(member.go_to_festival_area(entry, controller, travel_time))
 
         if action == "GO_TO_TENT_AREA":
-            yield self.env.process(member.go_to_tent_area(controller))
+            yield self.env.process(member.go_to_tent_area(controller, travel_time))
 
         elif action == "SMOKE":
             yield self.env.process(member.smoke(controller))
 
         elif action == "WITHDRAW":
             stall = member.choose_stall(festival, "atm")
-            yield self.env.process(member.withdraw(stall, controller))
+            yield self.env.process(member.withdraw(stall, controller, travel_time))
 
         elif action == "GO_FOR_FOOD":
             food = member.choose_food(festival, child_asistance, self.num_of_children)
@@ -155,19 +200,19 @@ class Group:
 
                 if child_asistance:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na jídlo pro sebe a své {self.num_of_children} děti, a bude si muset jít vybrat peníze."
-                    print(message)
+                    
                     logs.log_visitor(member, message)
 
                 else:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na to aby si mohl koupit jídlo a bude si muset jít vybrat peníze."
-                    print(message)
+                    
                     logs.log_visitor(member, message)
                     member.set_visitor_not_busy()
                     member.state["low_money"] = True
                     return
             else:
                 stall = member.choose_stall(festival, "foods", food)
-                yield self.env.process(member.go_for_food(stall, food, controller, child_asistance, self.num_of_children, self))
+                yield self.env.process(member.go_for_food(stall, food, controller, child_asistance, self.num_of_children, self, travel_time))
       
 
         elif action == "GO_FOR_DRINK":
@@ -189,7 +234,7 @@ class Group:
             if drink == None:
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na to aby si mohl koupit pití a bude si muset jít vybrat peníze."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
@@ -199,7 +244,7 @@ class Group:
 
             if stall is None:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} si chce koupit {drink}, ale v zóně není žádný stánek, který by ho prodával."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 return
@@ -213,21 +258,20 @@ class Group:
                     drinks_for_children.append(random.choice(soft_drinks))
                 
     
-                yield self.env.process(member.go_for_drink(controller, stall, drink, drinks_for_children, self))
+                yield self.env.process(member.go_for_drink(controller, stall, drink, travel_time, drinks_for_children, self))
             
             else:
-                yield self.env.process(member.go_for_drink(controller, stall, drink))
+                yield self.env.process(member.go_for_drink(controller, stall, drink, travel_time))
         
         elif action == "USE_TOILET":
-            print(member.fellows[1])
             need = member.decide_bathroom_action()
             toilet = member.choose_toilet(festival, need)
-            yield self.env.process(member.go_to_toilet(toilet, need, controller))
+            yield self.env.process(member.go_to_toilet(toilet, need, controller, travel_time))
 
             stall = member.choose_stall(festival, "handwashing_station")
 
             if stall is not None:
-                yield self.env.process(member.wash(stall, controller))
+                yield self.env.process(member.wash(stall, controller, travel_time))
             else:
                 member.state["clean_hands"] = False
 
@@ -240,7 +284,7 @@ class Group:
 
             if not member.can_afford(festival.get_price("shower_price"), num_people):
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na sprchu a musí si jít vybrat peníze."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
@@ -251,7 +295,7 @@ class Group:
                 return
 
             shower = member.choose_stall(festival, "showers")
-            yield self.env.process(member.go_to_shower(shower, controller, child_asistance, self.num_of_children, self))
+            yield self.env.process(member.go_to_shower(shower, controller, child_asistance, self.num_of_children, self, travel_time))
 
         elif action == "BRACELET_EXCHANGE":
 
@@ -261,26 +305,26 @@ class Group:
                 if (not member.can_afford(festival.get_price("on_site_price"), self.num_of_children) and not member.state["pre_sale_ticket"]) or (not member.can_afford(festival.get_price("camping_area_price"), self.num_of_children) and not member.state["tent_area_ticket"] and member.accommodition):
                 
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz, aby si mohl koupit vstupenku na festival pro sebe a své děti a musí si tedy jít vybrat peníze do bankomatu."
-                    print(message)
+                    
                     logs.log_visitor(member, message)
                     member.set_visitor_not_busy()
                     member.state["low_money"] = True
                     return
                 
                 else:
-                    yield self.env.process(member.bracelet_exchange(controller, booth, child_asistance, self))
+                    yield self.env.process(member.bracelet_exchange(controller, booth, travel_time, child_asistance, self))
 
             elif (not member.can_afford(festival.get_price("on_site_price")) and not member.state["pre_sale_ticket"]) or (not member.can_afford(festival.get_price("camping_area_price")) and not member.state["tent_area_ticket"] and member.accommodition):
                 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá koupený lístek z předprodeje, nebo nemá koupení lístek do stanového městečka, a nemá dost peněz, musí si tedy jít vybrat peníze do bankomatu."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
                 return
             
             else:
-                yield self.env.process(member.bracelet_exchange(controller, booth))
+                yield self.env.process(member.bracelet_exchange(controller, booth, travel_time))
 
         elif action == "PITCH_TENT":
             camping_area = member.choose_stall(festival, "tent_area")
@@ -290,13 +334,13 @@ class Group:
             else:
                 camping_area = camping_area[0]
 
-            yield self.env.process(member.pitch_tent(camping_area, controller))
+            yield self.env.process(member.pitch_tent(camping_area, controller, travel_time))
 
         elif action == "CHARGE_PHONE":
 
             if not member.can_afford(festival.get_price("charging_phone_price")):
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz nabití telefonu a musí si jít vybrat peníze."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
@@ -305,23 +349,23 @@ class Group:
             stalls = member.choose_stall(festival, "charging_stall")
             stall = member.find_area_with_more_space(stalls)
 
-            yield self.env.process(member.charge_phone(stall, controller))
+            yield self.env.process(member.charge_phone(stall, controller, travel_time))
         
         elif action == "RETURN_CUP":
             stall = member.choose_stall(festival, "cup_return")
 
             if child_asistance:
-                yield self.env.process(member.return_cup(stall, controller, child_asistance, self))
+                yield self.env.process(member.return_cup(stall, controller, travel_time, child_asistance, self))
             else:
-                yield self.env.process(member.return_cup(stall, controller))
+                yield self.env.process(member.return_cup(stall, controller, travel_time))
 
         elif action == "WASH":
             stall = member.choose_stall(festival, "handwashing_station")
-            yield self.env.process(member.wash(stall, controller))
+            yield self.env.process(member.wash(stall, controller, travel_time))
         
         elif action == "BRUSH_TEETH":
             stall = member.choose_stall(festival, "handwashing_station")
-            yield self.env.process(member.brush_teeth(stall, controller))
+            yield self.env.process(member.brush_teeth(stall, controller, travel_time))
 
         elif action == "SIT":
             stall = member.choose_stall(festival, "tables")
@@ -333,13 +377,13 @@ class Group:
                 if food:
                     yield self.env.process(member.eat(controller))
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.get_name()} {member.surname} si sní {food} za pochodu."
-                    print(message)
+                    
                     logs.log_visitor(member, message)
                     logs.log_message(message)
 
                 if drink:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} si vypije {drink} za pochodu."
-                    print(message)
+                    
                     logs.log_visitor(member, message)
                     logs.log_message(message)
                     yield self.env.process(member.drink(controller))
@@ -347,51 +391,50 @@ class Group:
                 else:
                     return
                 
-            yield self.env.process(member.sit(stall, controller))
+            yield self.env.process(member.sit(stall, controller, travel_time))
 
         elif action == "ATTEND_CONCERT":
-            print(member.age_category, member.state["location"])
             standing_by_stage = member.choose_stall(festival, "standing_at_stage")
 
             if len(standing_by_stage) == 1:
                 standing_by_stage = standing_by_stage[0]
 
-            yield self.env.process(member.go_to_concert(standing_by_stage, controller))
+            yield self.env.process(member.go_to_concert(standing_by_stage, travel_time, controller))
 
         elif action == "ATTEND_SIGNING_SESSION":
             signing_stall = member.choose_stall(festival, "signing_stall")
 
-            yield self.env.process(member.go_to_signing_session(signing_stall, controller))
+            yield self.env.process(member.go_to_signing_session(signing_stall, controller, travel_time))
 
         elif action == "BUY_MERCH":
             merch_stall = member.choose_stall(festival, "merch_stall")
-            yield self.env.process(member.buy_merch(merch_stall, controller))
+            yield self.env.process(member.buy_merch(merch_stall, controller, travel_time))
 
         elif action == "BUY_CIGARS":
             if member.can_afford(festival.get_price("cigars_price")):
                 cigars_stall = member.choose_stall(festival, "smoking")
-                yield self.env.process(member.buy_cigars(cigars_stall, controller))
+                yield self.env.process(member.buy_cigars(cigars_stall, controller, travel_time))
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na cigarety a musí si jít vybrat peníze."
-                print(message)
+                
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
                 return
 
         elif action == "GO_CHILL":
             chill_stall = member.choose_stall(festival, "chill_stall")
-            yield self.env.process(member.go_chill(chill_stall, controller))
+            yield self.env.process(member.go_chill(chill_stall, controller, travel_time))
 
         elif action == "GO_SMOKE_WATER_PIPE":
 
             if member.can_afford(festival.get_price("cigars_price")):
                 water_pipe_stall = member.choose_stall(festival, "water_pipe_stall")
-                yield self.env.process(member.go_smoke_water_pipe(water_pipe_stall, controller))
+                yield self.env.process(member.go_smoke_water_pipe(water_pipe_stall, controller, travel_time))
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz na vodní dýmku a musí si jít vybrat peníze."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 member.state["low_money"] = True
@@ -402,12 +445,12 @@ class Group:
             stall = member.choose_stall(festival, "handwashing_station")
 
             if stall is not None:
-                yield self.env.process(member.brush_teeth(stall, controller))
-                yield self.env.process(member.sleep_in_tent(controller))
-                yield self.env.process(member.brush_teeth(stall, controller))
+                yield self.env.process(member.brush_teeth(stall, controller, travel_time))
+                yield self.env.process(member.sleep_in_tent(controller, travel_time))
+                yield self.env.process(member.brush_teeth(stall, controller, travel_time))
 
             else:
-                yield self.env.process(member.sleep_in_tent(controller))
+                yield self.env.process(member.sleep_in_tent(controller, travel_time))
 
         elif action == "VISIT_ATTRACTION":
 
@@ -424,7 +467,7 @@ class Group:
 
             if attraction is None:
                 message = f"ČAS {time_converter.get_real_time()}: Na festivalu bohužel není žádná vhodná atrakce pro {member.age_category.value}, takže {member.name} {member.surname} nemůže jít na žádnou atrakci."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 return
@@ -438,22 +481,21 @@ class Group:
             elif not member.can_afford(festival.get_price(attraction.get_name())):
                 member.state["low_money"] = True
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá na atrakci {attraction.get_cz_name()} dost peněz, a bude si muset jít vybrat."
-                print(message)
+                
                 logs.log_visitor(member, message)
                 member.set_visitor_not_busy()
                 return
             
             else:
-                yield self.env.process(member.go_to_attraction(attraction, controller))
+                yield self.env.process(member.go_to_attraction(attraction, controller, travel_time))
         
         elif action == "TAKE_PHONE":
-            print(f"{member.get_name()} {member.inventory["phone"]}")
 
             if member.inventory["phone"][0]:
                 breakpoint()
 
             stall = member.find_charging_stall(controller)
-            yield self.env.process(member.take_phone(stall, controller))
+            yield self.env.process(member.take_phone(stall, controller, travel_time))
 
         elif action == "FOLLOW_PARENTS":
             yield self.env.process(member.follow_parents(group, controller))
@@ -505,6 +547,7 @@ class Group:
         """Tato funkce řídí skupinovou logiku návštěvníků zvlášt pro individální návštěvníky, rodiny a skupiny"""
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
+        in_zone = False
 
         while True:
             if self.type == source.Groups.INDIVIDUAL:
@@ -514,6 +557,12 @@ class Group:
                     if not member.get_is_busy():
                         action = member.next_move(controller)
 
+                        if "GO_TO" in action:
+                            in_zone = False
+                        else:
+                            in_zone = True
+
+                        self.count_group_walking_speed(self.members, festival, in_zone)
                         member.set_visitor_busy()
                         self.env.process(self.start_action(controller, member, action))
 
@@ -532,6 +581,12 @@ class Group:
                 
                 action = parent.next_move(controller)
 
+                if "GO_TO" in action:
+                    in_zone = False
+                else:
+                    in_zone = True
+
+                self.count_group_walking_speed(self.members, festival, in_zone)
                 can_children_handle_action_by_yourself = self.can_child_do_the_action(action)
                 child_asistance = not can_children_handle_action_by_yourself
 
@@ -567,7 +622,7 @@ class Group:
                                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.get_name()} jde s partnerem a dětmi k nabíjecímu stánku."
 
                                 logs.log_visitor(member, message)
-                                print(message)
+                                
                                 continue 
                             
                             else:
@@ -614,7 +669,7 @@ class Group:
 
                             self.set_group_need(group_need)
                             self.set_group_goal(source.NEEDS_ACTIONS[group_need])
-                            print(f"[GROUP {self.id}] Skupinový cíl nastaven na: {source.NEEDS_ACTIONS[group_need]}")
+
                             group_next_move = resolve_need("group", self.group_need, self, festival)
                         
                             if "GO_TO" in group_next_move:
@@ -635,15 +690,14 @@ class Group:
                                         target_zone = zone
 
                             self.set_group_target_zone(target_zone)
-                            print(f"[GROUP {self.id}] Cílová zóna nastavena na: {target_zone}")
-                        
+
                     # Odpojení členovů s urgentní solo potřebou
                     for member in group_mode_members:
                         individual_need = member.get_individual_need()
 
                         if (individual_need in priority_solo_needs) and (group_need != individual_need):
                             member.switch_group_mode()
-                            print(f"[GROUP {self.id}] Návštěvník {member.get_name()} se kvůli potřebě {member.get_individual_need()} odpojil od skupiny")
+
                             solo_mode_members.append(member)
                             group_mode_members.remove(member)
     
@@ -671,13 +725,22 @@ class Group:
                             self.set_group_is_ready_event()
                             self.members_needed = len(group_mode_members)
                             self.members_arrived = len(members_in_currect_zone)
-                            print(f"[GROUP {self.id}] Čeká se na {self.members_needed} členů, v zóně je {self.members_arrived}")
 
                             for member in members_in_currect_zone:
                                 self.env.process(self.wait_for_complete_group())
-                
-                            for member in members_comming:
+                            
+                            solo = True
 
+                            if len(members_comming) == len(group_mode_members):
+                                if "GO_TO" in action:
+                                    in_zone = False
+                                else:
+                                    in_zone = True
+
+                                self.count_group_walking_speed(members_comming, festival, in_zone)
+                                solo = False
+
+                            for member in members_comming:
                                 member_location = member.get_actual_zone()
 
                                 if member_location == source.Locations.STAGE_STANDING.name:
@@ -685,12 +748,17 @@ class Group:
 
                                 action = find_the_way(member_location, self.get_group_target_zone())
 
+                                if solo:
+                                    self.count_group_walking_speed([member], festival, False, solo=True)
+
                                 member.set_visitor_busy()
                                 self.env.process(self.start_action(controller, member, action))
 
                             continue
 
                         # Kdy jsou všichni v group modu v cílové zoně -> provedou akci
+                        self.count_group_walking_speed(group_mode_members, festival, False)
+
                         for member in group_mode_members:
                             member.set_visitor_busy()
                             member.add_action_to_last_actions(self.group_goal, self.env.now)
@@ -705,6 +773,7 @@ class Group:
                     # Členové co nejsou v group modu jedou individuálně
                     for member in solo_mode_members:
                         action = member.next_move(controller)
+                        self.count_group_walking_speed([member], festival, False, solo=True)
                         member.set_visitor_busy()
 
                         self.env.process(self.start_action(controller, member, action))
@@ -730,7 +799,7 @@ class Group:
 
 
 class Visitor:
-    def __init__(self, festival, id, name, surname, gender, age_category, age, qualities, state, preference, accommodation, fellows, inventory):
+    def __init__(self, festival, id, name, surname, gender, age_category, age, qualities, state, preference, accommodation, fellows, inventory, base_speed):
         self.env = festival
         self.id = id 
         self.name = name
@@ -744,6 +813,8 @@ class Visitor:
         self.accommodation = accommodation
         self.fellows = fellows
         self.inventory = inventory
+        self.base_speed = base_speed
+        self.actual_speed = None
         self.is_busy = False
         self.last_actions = {}
         self.actual_goal = None
@@ -811,6 +882,15 @@ class Visitor:
     def get_actual_goal(self):
         return self.actual_goal
     
+    def get_base_speed(self):
+        return self.base_speed
+
+    def get_actual_speed(self):
+        return self.actual_speed
+    
+    def set_actual_speed(self, speed):
+        self.actual_speed = speed
+
     def set_visitor_busy(self):
         self.is_busy = True
     
@@ -857,22 +937,30 @@ class Visitor:
         factor = 0.5
 
         self.state["energy"] = min(100, max(0, self.state["energy"] - factor * random.uniform(0.1, 0.5)))
-        self.state["hunger"] = min(100, max(0, self.state["hunger"] - self.qualities["hunger_frequency"] * random.uniform(0.1, 0.5)))
-        self.state["thirst"] = min(100, max(0, self.state["thirst"] - factor * random.uniform(0.1, 0.5)))
-        self.state["wc"] = min(100, max(0, self.state["wc"] - factor * random.uniform(0.1, 0.5)))
+        self.state["hunger"] = min(100, max(0, self.state["hunger"] - factor * self.qualities["hunger_frequency"] * random.uniform(0.01, 0.15)))
+        self.state["thirst"] = min(100, max(0, self.state["thirst"] - factor * random.uniform(0.1, 1.5)))
+        self.state["wc"] = min(100, max(0, self.state["wc"] - factor * random.uniform(0.1, 1)))
         self.state["hygiene"] = min(100, max(0, self.state["hygiene"] - factor * random.uniform(0.1, 0.5)))
-        self.state["drunkenness"] = min(100, max(0, self.state["drunkenness"] - self.qualities["alcohol_tolerance"] * random.uniform(0.1, 0.5)))
         
         mood_penalty = self.get_mood_penalty()
         self.state["mood"] == min(100, max(0, self.state["mood"] - mood_penalty)) 
-        
+
+        energy_factor = 0.4 + (self.state["energy"] / 100) * 0.6
+        mood_factor = 0.8 + (self.state["mood"] / 100) * 0.4
+        drunk_factor = 1
+
         if self.age_category != source.Age_category.CHILD:
+            
+            self.state["drunkenness"] = min(100, max(0, self.state["drunkenness"] - self.qualities["alcohol_tolerance"] * random.uniform(0.1, 0.5)))
+            drunk_factor = 1.0 - (self.state["drunkenness"] / 100) * 0.4
+
             if self.preference["smoker"]:
                 self.state["nicotine"] = min(100, max(0, self.state["nicotine"] - (factor * self.state["level_of_addiction"] * 0.1)))
 
             if self.inventory["phone"][0]:
                 self.inventory["phone"][0].battery = min(100, max(0, self.inventory["phone"][0].battery - random.uniform(0.1, 0.5)))
 
+        self.set_actual_speed(self.get_base_speed() * energy_factor * mood_factor * drunk_factor) 
 
 #-----------------------------------------------------------------ROZHODOVÁNÍ NÁSLEDUJÍCÍHO KROKU NÁVŠTĚVNÍKA---------------------------------------------------------------
 
@@ -1032,8 +1120,8 @@ class Visitor:
                 needs_scores["phone_dead"] = low_battery_score
 
         else:
-            print(f"{self.get_name()} / {self.age_category} -> Neměl by mít u sebe mobil...", self.inventory["phone"])
             charging_from = self.inventory["phone"][1]["time"]
+
             if ((self.env.now - charging_from) > 80) and "phone_ready" in possible_actions:
                 if random.random() > 0.5:
                     
@@ -1041,13 +1129,13 @@ class Visitor:
 
                     if self.is_need_valid(need):
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se rozhodl, že už si půjde vyzvednout mobil z nabíjecího stánku."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                         return need
                     
             elif ((self.env.now - self.inventory["phone"][1]["time"]) > 100) and ("phone_ready" in possible_actions):
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se rozhodl, že už si půjde vyzvednout mobil z nabíjecího stánku."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 need = "phone_ready"
 
@@ -1279,9 +1367,11 @@ class Visitor:
 
         if self.state["hunger"] < 30 or self.state["thirst"] < 30 or self.state["wc"] < 30:
             return False
+        
+        situation = festival.get_possible_actions_situation()
 
-        #if self.inventory.get("drink_in_hand", False): - možná předělat systém sezení u stolu
-        #    return random.random() < 0.6  # 60% šance
+        if not situation["outside"] and not situation["inside"]:
+            return random.random() < 0.3
 
         if 40 < self.state["energy"] < 70 and self.state["free_time"] >= 10:
             return random.random() < 0.5
@@ -1428,20 +1518,21 @@ class Visitor:
 
 # ---------------------------------------------------------------------POHYB---------------------------------------------------------
 
-    def go_to(self, location, controller):
+    def go_to(self, location, controller, travel_time):
         """Funkce která obsluje návštěvníkův přesun do jiné zóny bez vstupní prohlídky"""
+
 
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde do {location.value}"
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        yield self.env.timeout(10)
+        yield self.env.timeout(travel_time)
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil do {location.value}"
-        print(message)
+        
         logs.log_visitor(self, message)
         
         festival.decrease_num_people_in_zone(self.state["location"].name)
@@ -1458,14 +1549,14 @@ class Visitor:
 
         return resources.find_stall_with_shortest_queue_in_zone(self, None, None, None, entrances_from_visitor_zone)
 
-    def go_to_festival_area(self, entrance, controller):
+    def go_to_festival_area(self, entrance, controller, travel_time):
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(10)
+        yield self.env.timeout(travel_time)
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel ke vstupu."
-        print(message)
+        
         logs.log_visitor(self, message)
         
         start_waiting = self.env.now
@@ -1479,16 +1570,16 @@ class Visitor:
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal {waiting_time:.2f} minut ve frontě u vstupu."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_stalls_stats(entrance, "FESTIVAL_AREA", waiting_time)
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} prošel vstupem bez čekání."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
-            entry_time = random.uniform(1, 5)
+            entry_time = random.uniform(0.08, 0.02)
             yield self.env.timeout(entry_time)
 
             festival.decrease_num_people_in_zone(self.state["location"].name)
@@ -1496,28 +1587,29 @@ class Visitor:
             festival.increase_num_people_in_zone(source.Locations.FESTIVAL_AREA.name)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil do festivalového areálu."
-            print(message)
+            
             logs.log_visitor(self, message)
 
-    def go_to_tent_area(self, controller):
+    def go_to_tent_area(self, controller, travel_time):
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde do stanového městečka."
-        print(message)
+        
         logs.log_visitor(self, message)
 
+        yield self.env.timeout(travel_time)
+        
         if not self.state["tent_area_ticket"]:
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil ke stanovému městečku a nemá koupený lístek do stanového městečka."
-            print(message)
+            
             logs.log_visitor(self, message)
             return
 
         else:
-            yield self.env.timeout(random.uniform(0, 1))
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazila do stanového městečka."
-            print(message)
+            
             logs.log_visitor(self, message)
             
         festival.decrease_num_people_in_zone(self.state["location"].name)
@@ -1535,9 +1627,9 @@ class Visitor:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} má {free_time:.2f} minut volný čas a tak se se svými dětmi začal procházet po areálu a čekat, než se objeví další příležitost k aktivitě."
         
         else:
-            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} má {free_time:.2f} volný čas a tak se začal procházet po areálu a čekat, než se objeví další příležitost k aktivitě."
+            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} má {free_time:.2f} minut volný čas a tak se začal procházet po areálu a čekat, než se objeví další příležitost k aktivitě."
 
-        print(message)
+        
         logs.log_visitor(self, message)
         yield self.env.timeout(free_time)
         
@@ -1550,15 +1642,15 @@ class Visitor:
         if self.preference["smoker"] == True:
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si zapálil cigaretu a začal kouřit."
-            print(message)
+            
             logs.log_visitor(self, message)
 
         else:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} začal čekat, než si člen skupiny zapálí cigaretu."
-            print(message)
+            
             logs.log_visitor(self, message)
 
-        yield self.env.timeout(random.uniform(4, 6))
+        yield self.env.timeout(random.uniform(3, 5))
         
         if self.preference["smoker"] == True:
 
@@ -1567,12 +1659,12 @@ class Visitor:
             self.state["mood"] += min(self.state["mood"] + 30, 100)
             
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dokouřil, stav nikotinu je: {self.state["nicotine"]:.2f}"
-            print(message)
+            
             logs.log_visitor(self, message)
 
         else:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přestal čekat, až si člen skupiny zapálí."
-            print(message)
+            
             logs.log_visitor(self, message)
 
 #------------------------------------------------DĚTI-----------------------------------------------------------
@@ -1593,7 +1685,7 @@ class Visitor:
             self.inventory["food"] = food
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvníkovi {self.name} {self.surname} koupil rodič k jídlu {food}."
-            print(message)
+            
             logs.log_visitor(self, message)
             logs.log_message(message)
 
@@ -1603,7 +1695,7 @@ class Visitor:
             self.state["hygiene"] = 100
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se osprchoval."
-            print(message)
+            
             logs.log_visitor(self, message)
             logs.log_message(message)
 
@@ -1613,7 +1705,7 @@ class Visitor:
                 self.state["entry_bracelet"] = True
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal festivalový pásek."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_message(message)
 
@@ -1622,7 +1714,7 @@ class Visitor:
                 self.state["tent_area_ticket"] = True 
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal vstupenku do stanového městečka."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_message(message)
         
@@ -1631,7 +1723,7 @@ class Visitor:
             self.inventory["drink"] = drink
             
             message = f"ČAS {time_converter.get_real_time()}: Návštěvníkovi {self.name} {self.surname} rodič koupil {drink}."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             if "plastic_cup" in result_for_children:
@@ -1640,7 +1732,7 @@ class Visitor:
                     result_for_children["plastic_cup"] -= 1
 
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvníkovi {self.name} {self.surname} již nyní má kelímek."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
         elif "cup_return" in result_for_children:
@@ -1694,15 +1786,21 @@ class Visitor:
                 stall = foods.find_food_stall_with_shortest_queue_in_zone(self, festival)
                 return foods.choose_random_food_from_stall(self, stall, festival, child_asistance, num_of_children)
 
-    def go_for_food(self, stall, food, controller, child_asistance, num_of_children, group):
+    def go_for_food(self, stall, food, controller, child_asistance, num_of_children, group, travel_time):
         """funkce která simuluje návštěvníkovo koupení jídla ve stánku"""
         time_converter = controller.get_time_converter()
 
         price = source.foods[food]["price"]
         time_min, time_max = source.foods[food]["preparation_time"]
+        
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde ke stánku {stall.get_cz_name()}."
+        
+        logs.log_visitor(self, message)
 
-        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel ke stánku {stall.get_cz_name()}."
-        print(message)
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil ke stánku {stall.get_cz_name()}."
+        
         logs.log_visitor(self, message)
 
         start_waiting = self.env.now
@@ -1715,14 +1813,14 @@ class Visitor:
             yield req
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel na řadu a je u stánku {stall.get_cz_name()}"
-            print(message)
+            
             logs.log_visitor(self, message)
 
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal {waiting_time:.2f} minut ve frontě u stánku {stall.get_cz_name()}."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_stalls_stats(stall, self.state["location"].name, waiting_time)
 
@@ -1736,13 +1834,13 @@ class Visitor:
                 servings = num_of_children + 1
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čeká na {servings}x {food} a příprava bude trvat {preparation_time:.2f} minut."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(preparation_time)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal {food}"
-            print(message)
+            
             logs.log_visitor(self, message)
             
         self.state["money"] -= price * servings
@@ -1766,106 +1864,111 @@ class Visitor:
         satiety = source.foods[food]["satiety"]
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} začal jíst {food}"
-        print(message)
+        
         logs.log_visitor(self, message)
         yield self.env.timeout(eating_time)
         self.state["hunger"] = min(100, self.state["hunger"] + satiety)
-        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dojedl {food}, aktuální stav hladu je: {self.state["hunger"]}"
-        print(message)
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dojedl {food}, aktuální stav hladu je: {self.state["hunger"]:.2f}"
+        
         logs.log_visitor(self, message)
         self.inventory["food"] = None
 
 # -----------------------------------------------STOLY---------------------------------------------------------------
 
-    def sit(self, stall, controller):
+    def sit(self, stall, controller, travel_time):
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
-
+        table = stall.get_resource()
         """Funkce, která obsluju návštěvníkův pokus najít volný stůl a sednout si"""
 
-        yield self.env.timeout(random.uniform(0, 2))
-        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} hledá místo u stolu k sednutí"
-        print(message)
-        logs.log_visitor(self, message)
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde ke stolům"
         
-        yield self.env.timeout(random.uniform(0, 2))
+        logs.log_visitor(self, message)
 
-        if stall.get_resource().count >= stall.get_resource().capacity:
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} hledá místo u stolu k sednutí"
+        
+        logs.log_visitor(self, message)
+
+        start_waiting = self.env.now
+        req = table.request()
+            
+        while True:
             patience_index = self.qualities["patience"] * random.uniform(0.5, 1.5)
 
-            if patience_index > 5:
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si nemá kam sednout a jde pryč"
-                print(message)
+            result = yield req | self.env.timeout(2)
+
+            if req in result:
+                message = f"ČAS {time_converter.get_real_time()}: U stolů se uvolnilo místo."
+                
                 logs.log_visitor(self, message)
-                logs.log_message(message)
+                break
+
+            if patience_index <= 6:
+                table.release(req)
+                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si nemá kam sednout, došla mu trpělivost a jde pryč"
+                
+                logs.log_visitor(self, message)
+                return
+            
+            else:
+                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čeká na volný stůl."
+                
+                logs.log_visitor(self, message)
 
                 if self.inventory["food"]:
                     food = self.inventory["food"]
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si sní {food} za pochodu."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
-                    logs.log_message(message)
-                    yield self.env.process(self.eat(food, controller))
+                    yield self.env.process(self.eat(controller))
                 
                 if self.inventory["drink"]:
                     drink = self.inventory["drink"]
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si vypije {drink} za pochodu."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
-                    logs.log_message(message)
-                    yield self.env.process(self.drink(drink, festival))
+                    yield self.env.process(self.drink(controller))
                     
                 return
 
-            else:
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si nemá kam sednout ale počká než se uvolní místo u stolu."
-                print(message)
-                logs.log_visitor(self, message)
+        waiting_time = self.env.now - start_waiting
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si sedl ke stolu."
+        
+        logs.log_visitor(self, message)
 
-        start_waiting = self.env.now
-        with stall.get_resource().request() as req:
-
-            yield req
-
-            waiting_time = self.env.now - start_waiting
-            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si sedl ke stolu."
-            print(message)
+        if waiting_time > 0:
+            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal na volné místo u stolu {waiting_time:.2f} minut."
+            
             logs.log_visitor(self, message)
 
-            if waiting_time > 0:
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal na volné místo u stolu {waiting_time:.2f} minut."
-                print(message)
-                logs.log_visitor(self, message)
+        start_sitting = self.env.now
 
-            start_sitting = self.env.now
+        if self.inventory["food"] and self.inventory["drink"]:
+            yield self.env.process(self.eat(controller))
+            yield self.env.process(self.drink(controller))
+            sitting_time = self.env.now - start_sitting
 
-            food = self.inventory["food"]
-            drink = self.inventory["drink"]
+        elif self.inventory["food"]:
+            
+            yield self.env.process(self.eat(controller))
+            sitting_time = self.env.now - start_sitting
 
-            if food and drink:
-                yield self.env.process(self.eat(controller))
-                yield self.env.process(self.drink(controller))
-                sitting_time = self.env.now - start_sitting
+        elif self.inventory["drink"]:
 
-            elif food:
-                
-                yield self.env.process(self.eat(controller))
-                sitting_time = self.env.now - start_sitting
+            yield self.env.process(self.drink(controller))
+            sitting_time = self.env.now - start_sitting
 
-            elif drink:
+        else:
+            sitting_time = random.uniform(0 , self.state["free_time"])
+            yield self.env.timeout(sitting_time)
 
-                yield self.env.process(self.drink(controller))
-                sitting_time = self.env.now - start_sitting
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází od stolu."
+        
+        logs.log_visitor(self, message)
 
-            else:
-                sitting_time = random.uniform(0 , self.state["free_time"])
-                yield self.env.timeout(sitting_time)
-
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází od stolu."
-                print(message)
-                logs.log_visitor(self, message)
-
-            self.state["energy"] = min(100, self.state["energy"] + ((sitting_time / 60) * 20))
+        self.state["energy"] = min(100, self.state["energy"] + ((sitting_time / 60) * 20))
 
 # ------------------------------------------------PITÍ----------------------------------------------------------------
     
@@ -1906,7 +2009,7 @@ class Visitor:
 
         if not available_soft_drinks and self.preference["alcohol_consumer"] is False:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si chce dát nealkoholické pití, ale bohužel se v {self.state['location'].value} žádné nealkoholické pití neprodává, {self.name} {self.surname} si tedy koupí pití později."
-            print(message)
+            
             logs.log_visitor(self, message)
 
         if available_alcohol == {} or self.is_visitor_drunk():
@@ -2028,7 +2131,7 @@ class Visitor:
         chosen_type_of_alcohol = random.choices(choices, weights=weights, k=1)[0]
         return chosen_type_of_alcohol
     
-    def go_for_drink(self, controller, stall, drink, drinks_for_children = None, group = None):
+    def go_for_drink(self, controller, stall, drink, travel_time, drinks_for_children = None, group = None):
         """funkce která simuluje návštěvníkovo koupení jídla ve stánku"""
 
         festival = controller.get_festival()
@@ -2037,6 +2140,17 @@ class Visitor:
         plastic_cup_price = festival.get_price("plastic_cup_price")
         price = source.drinks[drink]["price"]
         time_min, time_max = source.drinks[drink]["preparation_time"]
+        
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde kde stánku {stall.get_cz_name()}."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil ke stánku {stall.get_cz_name()}."
+        
+        logs.log_visitor(self, message)
+
         start_waiting = self.env.now
 
         # čekání na stánek
@@ -2045,13 +2159,13 @@ class Visitor:
             yield req
             will_wait = stall.get_resource().count >= stall.get_resource().capacity
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel na řadu a je u stánku {stall.get_cz_name()} v zóně {self.state["location"].value}"
-            print(message)
+            
             logs.log_visitor(self, message)
 
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal u stánku {stall.get_cz_name()} {waiting_time:.2f} minut"
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_stalls_stats(stall, self.state["location"].name, waiting_time)
 
@@ -2065,7 +2179,7 @@ class Visitor:
                 preparation_time = random.uniform(time_min, time_max)
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čeká na {drink} a příprava bude trvat {preparation_time:.2f} minut."
           
-            print(message)
+            
             logs.log_visitor(self, message)
             yield self.env.timeout(preparation_time)
         
@@ -2074,7 +2188,7 @@ class Visitor:
                     self.inventory["plastic_cup"] == True
                     self.state["money"] -= plastic_cup_price
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} neměl kelímek a musel si koupit nový"
-                    print(message)
+                    
                     logs.log_visitor(self, message)
             
             if drinks_for_children:
@@ -2097,11 +2211,11 @@ class Visitor:
                 self.state["money"] -= plastic_cup_price * num_buy_cups
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} koupil pití pro děti."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} koupil {num_buy_cups} chybějících kelímků."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 result = {"drinks": drinks_for_children, "plastic_cup": num_buy_cups}
@@ -2109,7 +2223,7 @@ class Visitor:
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal {drink}"
-                print(message)
+                
                 logs.log_visitor(self, message)
 
         self.state["money"] -= price
@@ -2124,13 +2238,13 @@ class Visitor:
         drinking_time = random.uniform(drinking_time_min, drinking_time_max)
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} začal pít {drink_name}."
-        print(message)
+        
         logs.log_visitor(self, message)
         
         yield self.env.timeout(drinking_time)
         
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} dopil {drink_name}."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         if "hydration" in drink_data:
@@ -2145,14 +2259,14 @@ class Visitor:
         self.inventory["drink"] = None
 # -----------------------------------------------VÝBĚR PENĚZ---------------------------------------------------------
 
-    def withdraw(self, atm, controller):
+    def withdraw(self, atm, controller, travel_time):
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        yield self.env.timeout(travel_time)
 
         start_waiting = self.env.now
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k bankomatu."
-        print(message)
+        
         logs.log_visitor(self, message)
         with atm.resource.request() as req:
             
@@ -2161,11 +2275,11 @@ class Visitor:
 
             if waiting_time > 0:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal ve frontě u bankomatu {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel na řadu a začal vybírat peníze."
-            print(message)
+            
             logs.log_visitor(self, message)
             
             yield self.env.timeout(random.uniform(1, 5))
@@ -2173,7 +2287,7 @@ class Visitor:
             self.state["money"] += random.randint(1000, 10000)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dokončil výběr peněz. Aktulně má u sebe návtěvník {self.state["money"]:.2f} Kč"
-            print(message)
+            
             logs.log_visitor(self, message)
 
             
@@ -2222,7 +2336,7 @@ class Visitor:
         else:
             return random.choice(list(toitois))
   
-    def go_to_toilet(self, toilet, need, controller):
+    def go_to_toilet(self, toilet, need, controller, travel_time):
         time_converter = controller.get_time_converter()
 
         """Funkce která obsluje návštěvníka na wc"""
@@ -2248,13 +2362,19 @@ class Visitor:
             else:
                 wc_time = random.uniform(1, 3)  
 
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k toitoikám."
+        
+        logs.log_visitor(self, message)
+        
+        yield self.env.timeout(travel_time)
+
         start_waiting = self.env.now
 
         with toilet.resource.request() as req:
             
             will_wait = toilet.resource.count >= toilet.resource.capacity
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k {toilet.get_cz_name()}"
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield req
@@ -2262,27 +2382,31 @@ class Visitor:
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal na volnou {toilet.get_cz_name()} {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} vchází na {toilet.get_cz_name()}."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(wc_time)
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází z {toilet.get_cz_name()}."
-            print(message)
+            
             logs.log_visitor(self, message)
 
-    def wash(self, stall, controller):
+    def wash(self, stall, controller, travel_time):
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k umývárně."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
 
         start_waiting = self.env.now
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k umývárně."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
@@ -2292,31 +2416,35 @@ class Visitor:
 
             if waiting_time > 0:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal {waiting_time:.2f} minut, než se u umývárny uvolní místo."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si začal umývat ruce."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(random.uniform(0, 1.5))
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dokončil umytí rukou."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             self.state["hygiene"] += random.randint(10, 20)
         
-    def brush_teeth(self, stall, controller):
+    def brush_teeth(self, stall, controller, travel_time):
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k umývárně."
+        
+        logs.log_visitor(self, message)
 
-        start_waiting = self.env.now
+        yield self.env.timeout(travel_time)
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k umývárně."
-        print(message)
+        
         logs.log_visitor(self, message)
+
+        start_waiting = self.env.now
 
         with stall.get_resource().request() as req:
             
@@ -2325,17 +2453,17 @@ class Visitor:
 
             if waiting_time > 0:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal {waiting_time:.2f} minut, než se u umývárny uvolní místo."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si začal čistit zuby."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(random.uniform(0, 1.5))
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dokončil čištění zubů."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             self.state["hygiene"] += random.randint(15, 30)
@@ -2344,7 +2472,7 @@ class Visitor:
 
 # -------------------------------------------------SPRCHY ---------------------------------------------------------
             
-    def go_to_shower(self, shower, controller, child_asistance, num_of_children, group):
+    def go_to_shower(self, shower, controller, child_asistance, num_of_children, group, travel_time):
         """funkce obsluhující návštěvníka ve sprše"""
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
@@ -2353,13 +2481,18 @@ class Visitor:
             base_time = random.uniform(5, 15)
         else:
             base_time = random.uniform(12, 20)
-
+        
         if child_asistance:
             total_people = 1 + num_of_children
 
-           
+            message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} s {num_of_children} dětmi jdou ke sprchám."
+            
+            logs.log_visitor(self, message)
+
+            yield self.env.timeout(travel_time)
+
             message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} s {num_of_children} dětmi přišel ke sprchám."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             start_waiting = self.env.now
@@ -2373,19 +2506,19 @@ class Visitor:
 
             if waiting_time > 0:
                 message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} s {num_of_children} dětmi čekali {waiting_time:.2f} minut na volné sprchy."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_stalls_stats(shower, self.state["location"].name, waiting_time)
 
             message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} s {num_of_children} dětmi vchází do sprch."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             shower_time = base_time + (5 * num_of_children)
             yield self.env.timeout(shower_time)
 
             message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} s {num_of_children} dětmi odchází ze sprch."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             for req in reqs:
@@ -2398,13 +2531,19 @@ class Visitor:
             group.set_result_for_children(result)
 
         else:
+            
+            message = f"ČAS {time_converter.get_real_time()}: Návtěvník {self.name} {self.surname} jde ke sprchám."
+            
+            logs.log_visitor(self, message)
+
+            yield self.env.timeout(travel_time)
 
             with shower.resource.request() as req:
                 start_waiting = self.env.now
                 will_wait = shower.resource.count >= shower.resource.capacity
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel ke sprchám"
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 yield req
@@ -2412,18 +2551,18 @@ class Visitor:
                 if will_wait:
                     waiting_time = self.env.now - start_waiting
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal na volnou sprchu {waiting_time:.2f} minut."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     logs.log_stalls_stats(shower, self.state["location"].name, waiting_time)
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} vchází do sprchy."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 yield self.env.timeout(base_time)
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází ze sprchy."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             self.state["money"] -= festival.get_price("shower_price")
@@ -2431,12 +2570,16 @@ class Visitor:
 
 # --------------------------------------------STANOVÉ MĚSTEČKO------------------------------------------------------
 
-    def pitch_tent(self, camping_area, controller):
+    def pitch_tent(self, camping_area, controller, travel_time):
             #funkce která obsluhuje návštěvníkovo stavění stanu
  
             time_converter = controller.get_time_converter()
-    
-            yield self.env.timeout(random.uniform(0, 2))
+
+            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde na louku na stanování postavit stan."
+            
+            logs.log_visitor(self, message)
+
+            yield self.env.timeout(travel_time)
 
             num_fellows = len(self.fellows)
             pitch_time = random.uniform(15, 20) - num_fellows * 1.5
@@ -2452,22 +2595,22 @@ class Visitor:
                     if self.accommodation["owner"] == False:
                         
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} pomáhá kolegovi postavit stan."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                         yield self.env.timeout(pitch_time)
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} s kolegou dostavěli stan."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                     else:        
                         position.append(self.inventory["tent"])
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} staví stan."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                         
                         yield self.env.timeout(pitch_time)
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostavěl stan."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
 
@@ -2478,7 +2621,7 @@ class Visitor:
 
             if not free_space:
                 message = f"ČAS {time_converter.get_real_time()}: Došlo místo ve stanovém městečku!"
-                print(message)
+                
                 logs.log_visitor(self, message)
 
     def find_area_with_more_space(self, areas):
@@ -2496,15 +2639,19 @@ class Visitor:
         else:
             return areas[0]
 
-    def sleep_in_tent(self, controller):
+    def sleep_in_tent(self, controller, travel_time):
 
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde do svého stanu."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
         
         if self.accommodation["built"] is True:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} došel do stanu."
-            print(message)
+            
             logs.log_visitor(self, message)
             
             with self.accommodation["camping_area"].positions[self.accommodation["i"]][0].request() as req:
@@ -2512,12 +2659,12 @@ class Visitor:
                 yield req
                 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je ve stanu a chystá se na spaní."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 yield self.env.timeout(random.uniform(1,10))
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde spát."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 
                 well_rested = False
@@ -2530,20 +2677,16 @@ class Visitor:
 
                     if self.state["energy"] >= 80:
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se vzbudil."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                         well_rested = True
 
                     else:
                         sleeping_time = random.uniform(30, 120)
-                    
-        else:
-            message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} nemá žádný přidělený stan, ve kterém by mohl spát."
-            print(message)
-            logs.log_visitor(self, message)
+
 # ------------------------------------------------POKLADNY ---------------------------------------------------------
 
-    def bracelet_exchange(self, controller, ticket_booth, child_asistance=None, group=None):
+    def bracelet_exchange(self, controller, ticket_booth, travel_time, child_asistance=None, group=None):
         #funkce, která simuluje návštěvníkovo ukázání lístku u pokladny, výměnou za pásek na ruku umožňující vstup do arálu.
         #Návštěvník si lístek v pokladně koupí, pokud ho nemá z předprodeje,
         #pokud návštěvník nemá lístek do stanového městečka, koupí si i ten.
@@ -2559,10 +2702,16 @@ class Visitor:
         on_site_price = festival.get_price("on_site_price")
         camping_area_price = festival.get_price("camping_area_price")
         
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k pokladně číslo {ticket_booth.get_id()}."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
         with ticket_booth.resource.request() as req:
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel/la k pokladně číslo {ticket_booth.get_id()}."
-            print(message)
+            
             logs.log_visitor(self, message)
             
             start_waiting = self.env.now
@@ -2573,7 +2722,7 @@ class Visitor:
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal ve frontě u pokladny číslo {ticket_booth.get_id()} {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 logs.log_stalls_stats(ticket_booth, self.state["location"].name, waiting_time)
 
@@ -2586,14 +2735,14 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.16 , 0.33 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} a jeho děti již mají festivalovou vstupenku i vstupenku do stanového městečka koupený z předprodeje, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     else:
                         yield self.env.timeout(random.uniform(0.16, 0.33))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl festivalovou vstupenku i vstupenku do stanového městečka koupený z předprodeje, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                 elif self.state["pre_sale_ticket"]:
@@ -2602,7 +2751,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl festivalovou vstupenku koupenou z předprodeje ale koupil na pokladně pro sebe a své děti vstupenky do stanového městečka, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                         result_for_children["bracelet_exchange"]["tent_area_ticket"] = num_of_children
@@ -2612,7 +2761,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl festivalovou vstupenku koupenou z předprodeje ale koupil si na pokladně vstupenku do stanového městečka, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     self.state["tent_area_ticket"] = True
@@ -2625,7 +2774,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl vstupenku do stanového městečka koupenou z předprodeje ale koupil na pokladně pro sebe a své děti vstupenky na festival, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                         result_for_children["bracelet_exchange"]["on_site_ticket"] = num_of_children
@@ -2635,7 +2784,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75))
                 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl vstupenku do stanového městečka koupenou z předprodeje ale koupil si na pokladně festivalovou vstupenku, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     self.state["money"] -= on_site_price
@@ -2646,7 +2795,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(1, 2 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil na pokladně pro sebe a své děti vstupenku do stanového městečka i vstupenku do festivalového areálu, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                         result_for_children["bracelet_exchange"]["on_site_ticket"] = num_of_children
@@ -2659,7 +2808,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(1, 2))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil na pokladně vstupenku do stanového městečka i vstupenku do festivalového areálu, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     self.state["tent_area_ticket"] = True
@@ -2675,14 +2824,14 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.16 , 0.33 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} a jeho děti již mají festivalovou vstupenku koupenou z předprodeje, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     else:
                         yield self.env.timeout(random.uniform(0.16, 0.33))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} měl festivalovou vstupenku koupenou z předprodeje, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                 
                 elif not self.state["pre_sale_ticket"]:
@@ -2691,7 +2840,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75 + (0.16 * num_of_children)))
 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} koupil na pokladně pro sebe a své děti vstupenky na festival, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                         result_for_children["bracelet_exchange"]["on_site_ticket"] = num_of_children
@@ -2701,7 +2850,7 @@ class Visitor:
                         yield self.env.timeout(random.uniform(0.33, 0.75))
                 
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil na pokladně festivalovou vstupenku, dostal pásek a odchází z pokladny."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
 
                     self.state["money"] -= on_site_price
@@ -2713,17 +2862,21 @@ class Visitor:
 
 # ----------------------------------------------NABÍJECÍ STÁNEK ---------------------------------------------------------
 
-    def charge_phone(self, stall, controller):
+    def charge_phone(self, stall, controller, travel_time):
         """Funkce na nabití najení telefonů návštěvníků"""
 
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k nabíjecímu stánku."    
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        yield self.env.timeout(random.uniform(1, 3))
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil k nabíjecímu stánku."    
+        
+        logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
             start_waiting = self.env.now
@@ -2731,17 +2884,14 @@ class Visitor:
             yield req
 
             will_wait = self.env.now - start_waiting
+
             if will_wait:
                 waiting_time = self.env.now - start_waiting
 
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel/la k nabíjecímu stánku a čekal ve frontě {waiting_time:.2f} minut."    
-                print(message)
+                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal ve frontě u nabíjecího stánku {waiting_time:.2f} minut."    
+                
                 logs.log_visitor(self, message)
 
-            else:
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel/la k nabíjecímu stánku."    
-                print(message)
-                logs.log_visitor(self, message)
 
             positions = stall.get_positions()
 
@@ -2762,30 +2912,31 @@ class Visitor:
                     self.inventory["phone"][1] = {"zone": stall.get_zone(), "stall_id": stall.get_id(), "position": i, "time": self.env.now}
 
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si dává nabít mobil do nabíjecího stánku."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
-                    yield self.env.timeout(random.uniform(1,5))
+                    yield self.env.timeout(random.uniform(0.5, 1.5))
+
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si dal mobil do nabíjecího stánku."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
                     self.state["money"] -= festival.get_price("charging_phone_price")
                 
             elif positions[0] <= 0:
                 message = f"ČAS {time_converter.get_real_time()}: Bohužel došly pozice na nabíjení v nabíjecím stánku a návštěvník {self.get_name()} odchází pryč."
-                print(message)
+                
                 logs.log_visitor(self, message)
     
-    def take_phone(self, stall, controller):
+    def take_phone(self, stall, controller, travel_time):
 
         time_converter = controller.get_time_converter()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k nabíjecímu stánku."    
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        yield self.env.timeout(random.uniform(1, 3))
+        yield self.env.timeout(travel_time)
 
         with stall.get_resource().request() as req:
             start_waiting = self.env.now
@@ -2797,12 +2948,12 @@ class Visitor:
                 waiting_time = self.env.now - start_waiting
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel/la k nabíjecímu stánku a čekal ve frontě {waiting_time:.2f} minut."    
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel/la k nabíjecímu stánku."    
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             done = False
@@ -2833,23 +2984,18 @@ class Visitor:
 
                 else:
                     message = f"ČAS {time_converter.get_real_time()}: Telefon návštěvníka {self.name} {self.surname} má teprve {phone.battery:.2f} procent baterky a tak se {self.name} rozhodl, že ho ještě chvilku nechá nabíjet."    
-                    print(message)
+                    
                     logs.log_visitor(self, message)
-
-            else:
-                message = f"ČAS {time_converter.get_real_time()}: CHYBA!! Mobil nebyl nalezen!"
 
             if done:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal zpátky mobil z nabíjecího stánku a aktuální stav jeho baterky je {self.inventory["phone"][0].get_state_of_battery():.2f} procent."    
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             
 
     def find_charging_stall(self, controller):
-        
-        print(self.inventory["phone"])
-
+    
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
     
@@ -2862,21 +3008,26 @@ class Visitor:
                     return stall
                 
         message = f"ČAS {time_converter.get_real_time()}: ERROR!! Nabíjecí stánek s telefonem návštěvníka {self.name} {self.surname} nebyl nalezen!"
-        print(message)
+        
         return None
     
 # ----------------------------------------------VRÁCENÍ KELÍMKŮ ---------------------------------------------------------
 
-    def return_cup(self, stall, controller, child_asistance, group):
+    def return_cup(self, stall, controller, travel_time, child_asistance=None, group=None):
 
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k výkupu kelímků."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
         cup_price = festival.get_price("plastic_cup_price")
         start_waiting = self.env.now
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k výkupu kelímků."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
@@ -2886,7 +3037,7 @@ class Visitor:
 
             if waiting_time > 0:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal ve frontě {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             if child_asistance:
@@ -2905,7 +3056,7 @@ class Visitor:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel na řadu a začal vracet kelímek."
                 returning_time = random.uniform(0.10, 0.15)
 
-            print(message)
+            
             logs.log_visitor(self, message)
             
             yield self.env.timeout(returning_time)
@@ -2920,7 +3071,7 @@ class Visitor:
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} vrátil kelímek."
             
-            print(message)
+            
             logs.log_visitor(self, message)
 
             self.state["money"] += cup_price
@@ -2950,7 +3101,7 @@ class Visitor:
     
 # --------------------------------------------KONCERTY--------------------------------------------------------
 
-    def go_to_concert(self, standing_by_stage, controller, position = None):
+    def go_to_concert(self, standing_by_stage, travel_time, controller, position = None):
         position_map = {"first_lines": "prvních řadách", "middle": "prostředním sektoru", "back": "zadním sektoru"}
 
         festival = controller.get_festival()
@@ -2979,21 +3130,22 @@ class Visitor:
                 self.state["location"] = source.Locations.STAGE_STANDING
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k podiu na koncert kapely {actual_band["band_name"]}."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 
-                time_to_get_by_stage = random.uniform(1, 3)
+                time_to_get_by_stage = travel_time
 
                 if time_to_get_by_stage > reimaining_time:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} už bohužel koncert kapely {actual_band["band_name"]} nestíhá a tak jde dělat něco jiného."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     yield self.env.timeout(1)
                     return
                 
+                else:
+                    self.env.timeout(travel_time)
+                
             else:
-                if self.age_category == source.Age_category.CHILD:
-                    breakpoint()
 
                 resource = self.state["location_stage"]
                 position = self.state["location_stage_position"]
@@ -3001,18 +3153,18 @@ class Visitor:
 
                 if time_to_start > 0:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} zůstane u podia i na koncert kapely {actual_band["band_name"]}, který je za {time_to_start:.2f} minut."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                 
                 else:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} zůstane u podia i na koncert kapely {actual_band["band_name"]}, která již hraje a koncert bude trvat ještě {(actual_band["end_playing_time"] - actual_band["start_playing_time"] + time_to_start):.2f} minut."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
                 yield self.env.timeout(actual_band["end_playing_time"] - self.env.now) 
 
                 message = f"ČAS {time_converter.get_real_time()}: Koncert skončil a {self.name} {self.surname} přemýšlí, co bude dělat dál."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 return
 
@@ -3030,7 +3182,7 @@ class Visitor:
                     resource = standing_by_stage.resource["back"]
             
             else:
-                print(standing_by_stage)
+
                 if standing_by_stage.resource["first_lines"].count < standing_by_stage.resource["first_lines"].capacity:
                     position = position_map["first_lines"]
                     resource = standing_by_stage.resource["first_lines"]
@@ -3042,7 +3194,7 @@ class Visitor:
                 else:
                     if standing_by_stage.resource["back"].count >= standing_by_stage.resource["back"].capacity:
                         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se snaží dostat k pódiu, ale je tam už úplně plno. Půjde tedy udělat něco jiného."
-                        print(message)
+                        
                         logs.log_visitor(self, message)
                         return
                     
@@ -3057,14 +3209,14 @@ class Visitor:
                 yield req
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je u podia v {position} na koncertě kapely {actual_band["band_name"]}."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 
                 time = actual_band["end_playing_time"] - self.env.now
                 yield self.env.timeout(time)
 
                 message = f"ČAS {time_converter.get_real_time()}: Koncert skončil a {self.name} {self.surname} přemýšlí, co bude dělat dál."
-                print(message)
+                
                 logs.log_visitor(self, message)
             
         else:
@@ -3072,7 +3224,7 @@ class Visitor:
             
 # ---------------------------------------------AUTOGRAMIÁDY------------------------------------------------------------
 
-    def go_to_signing_session(self, stall, controller):
+    def go_to_signing_session(self, stall, controller, travel_time):
         """ resource[0] -> kapela (1), 
             resource[1] -> 5 místa u kapely (podepisování), 
             resource[2] -> fronta (kapacita fronty) - 4 lidi co jsou už u kapely 
@@ -3084,10 +3236,14 @@ class Visitor:
         actual_band = stall.get_resource()[3]
         
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde na autogramiádu kapely {actual_band["band_name"]}."
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        yield self.env.timeout(random.uniform(1,2))
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} právě dorazil k stanu na autogramiády."
+        
+        logs.log_visitor(self, message)
 
         with stall.get_resource()[2].request() as req_queue:
             start_wait = self.env.now
@@ -3096,7 +3252,7 @@ class Visitor:
 
             if self.env.now < actual_band["start_signing_session"]:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je ve frontě a čeká na začátek autogramiády kapely {actual_band["band_name"]}."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 
@@ -3104,7 +3260,7 @@ class Visitor:
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je ve frontě na autogramiádě kapely {actual_band["band_name"]} a čeká než příjde na řadu."
-                print(message)
+                
                 logs.log_visitor(self, message)
         
             with stall.get_resource()[1].request() as req_sig:
@@ -3113,13 +3269,13 @@ class Visitor:
 
                 waiting_time = self.env.now - start_wait
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel na řadu a právě dostává autogramy od kapely {actual_band["band_name"]}."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
                 yield self.env.timeout(random.uniform(0, 2))
 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dostal autogramy od kapely {actual_band["band_name"]} a čekal na něj ve frontě {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 self.inventory["autographs"].append(f"{actual_band["band_name"]}")
 
@@ -3127,26 +3283,31 @@ class Visitor:
 
 #-------------------------------------------CHILL ZÓNA - Cigaretový stánek---------------------------------------------------------
     
-    def buy_cigars(self, stall, controller):
+    def buy_cigars(self, stall, controller, travel_time):
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k cigaretovému stánku."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k cigaretovému stánku."
+        
+        logs.log_visitor(self, message)
+
         if self.preference["smoker"] == False:
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čeká, než si jeho kolega koupí cigarety."
-            print(message)
+            
             logs.log_visitor(self, message)
-            yield self.env.timeout(random.uniform(0,2)) #dodělat aby čekal stejně dlouho jako ten co kupuje cigára
+            yield self.env.timeout(1)
             return
         
         level_of_addiction = self.state["level_of_addiction"]
         level_of_addiction //= 2
 
         how_many_cigars = level_of_addiction * 20
-
-        yield self.env.timeout(random.uniform(0, 2))
-        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k cigaretovému stánku."
-        print(message)
-        logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
 
@@ -3157,30 +3318,35 @@ class Visitor:
             if self.env.now > start_waiting:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} čekal ve frontě u cigaretového stánku než přišel na řadu {waiting_time:.2f} minut."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} kupuje {how_many_cigars // 20} krabiček cigaret."
-            print(message)
+            
             logs.log_visitor(self, message)
 
-            yield self.env.timeout(random.uniform(0,2))
+            yield self.env.timeout(1)
 
             self.state["money"] - ((how_many_cigars // 20) * festival.get_price("cigars_price"))
             self.state["cigarettes"] += how_many_cigars
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} nakoupil cigarety a aktuálně jich má {self.state["cigarettes"]}."
-            print(message)
+            
             logs.log_visitor(self, message)
                 
 
 #-------------------------------------------CHILL ZÓNA - Chill stánek---------------------------------------------------------
     
-    def go_chill(self, stall, controller):
+    def go_chill(self, stall, controller, travel_time):
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k chill stánku."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k chill stánku."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
@@ -3189,13 +3355,13 @@ class Visitor:
 
             if req not in result:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází od chill stánku, protože už je plně obsazený."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 return
 
             chilling_time = random.uniform(0, self.state["free_time"])
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je v chill stánku a bude odpočívat {chilling_time:.2f} minut."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(chilling_time)
@@ -3203,14 +3369,19 @@ class Visitor:
 
 #-------------------------------------------CHILL ZÓNA - Stánek s vodníma dýmkama---------------------------------------------------------
 
-    def go_smoke_water_pipe(self, stall, controller):
+    def go_smoke_water_pipe(self, stall, controller, travel_time):
         
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
-        yield self.env.timeout(random.uniform(0, 2))
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde ke stánku s vodníma dýmkama."
+        
+        logs.log_visitor(self, message)
+
+        yield self.env.timeout(travel_time)
+
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přišel k stánku s vodníma dýmkama."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         with stall.get_resource().request() as req:
@@ -3219,14 +3390,14 @@ class Visitor:
 
             if req not in result:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} odchází od stánku s vodníma dýmkama, protože už je plně obsazený."
-                print(message)
+                
                 logs.log_visitor(self, message)
                 return
             
             self.state["money"] -= festival.get_price("water_pipe_price")
             smoking_time = random.uniform(0, self.state["free_time"])
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je ve stánku s vodníma dýmkama a bude odpočívat a kouřit {smoking_time:.2f} minut."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield self.env.timeout(smoking_time)
@@ -3239,7 +3410,7 @@ class Visitor:
 
 #-------------------------------------------------MERCH---------------------------------------------------------------
 
-    def buy_merch(self, merch_stall, controller):
+    def buy_merch(self, merch_stall, controller, travel_time):
         """SimPy proces: návštěvník kupuje merch u stánku."""
         
         festival = controller.get_festival()
@@ -3252,10 +3423,14 @@ class Visitor:
         available_bands_items = {}
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} se jde podívat k merch stánku."
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        self.env.timeout(random.uniform(1,3))
+        self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} právě dorazil k merch stánku."
+        
+        logs.log_visitor(self, message)
 
         start_waiting = self.env.now
 
@@ -3271,7 +3446,7 @@ class Visitor:
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je na řadě u merch stánku a nemusel čekat než přijde na řadu."
             
-            print(message)
+            
             logs.log_visitor(self, message)
 
             for name, merch in bands_merch.items():
@@ -3289,19 +3464,19 @@ class Visitor:
 
                 if filtered_bands_merch == {} and filtered_festival_merch == {}:            
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si již koupil úplně všechen merch, o který měl zájem, a tak odchází z merch stánku."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     return
 
                 elif filtered_bands_merch == {}:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si již koupil všechen merch od kapel, které má rád, koupí si tedy něco z festivalového merche."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     available_items = filtered_festival_merch
 
                 elif filtered_festival_merch == {}:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si již koupil všechen festivalový merch, koupí si tedy merch od nějaké kapely."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     available_items = filtered_bands_merch
 
@@ -3324,24 +3499,24 @@ class Visitor:
                 
                 if band:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si chce koupit {item_name} od kapely {band}."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                 else:
 
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si chce koupit {item_name}."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
 
                 if item_info["quantity"] <= 0:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si nemůže koupit {item_name}, protože {item_name} už jsou vyprodané."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     return
                 
                 if self.state["money"] < item_info["price"]:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si nemůže koupit {item_name}, protože na {item_name} nemá dost peněz a musí si jít vybrat."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
                     self.state["low_money"] = True
                     return
@@ -3351,12 +3526,12 @@ class Visitor:
 
                 if band:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil {item_name} od kapely {band}."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
                 else:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil {item_name}."
-                    print(message)
+                    
                     logs.log_visitor(self, message)
 
                 item_info["quantity"] -= 1
@@ -3385,7 +3560,7 @@ class Visitor:
                 had_enough = random.random() <= 0.5
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si koupil vše co teď chtěl a odchází od merch stánku."
-            print(message)
+            
             logs.log_visitor(self, message)
     
     def filter_festival_merch(self, festival_merch):
@@ -3480,7 +3655,7 @@ class Visitor:
         return attraction
 
 
-    def go_to_attraction(self, attraction, controller):
+    def go_to_attraction(self, attraction, controller, travel_time):
         festival = controller.get_festival()
         time_converter = controller.get_time_converter()
 
@@ -3489,10 +3664,15 @@ class Visitor:
         attraction_cz_name = attraction_instance.get_cz_name()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde na atrakci {attraction_cz_name}."
-        print(message)
+        
         logs.log_visitor(self, message)
 
-        yield self.env.timeout(random.uniform(1, 2))
+        yield self.env.timeout(travel_time)
+
+        message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} dorazil k atrakci {attraction_cz_name}."
+        
+        logs.log_visitor(self, message)
+
 
         # čekání ve frontě
         with attraction.get_resource().request() as req:
@@ -3512,12 +3692,12 @@ class Visitor:
             if will_wait:
                 waiting_time = self.env.now - start_waiting
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je na atrakci {attraction_cz_name}, čekal {waiting_time:.2f} minut, než se dostal na řadu, a teď čeká, než začne jízda."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             else:
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} je na atrakci {attraction_cz_name} a čeká než začne jízda."
-                print(message)
+                
                 logs.log_visitor(self, message)
 
             attraction.attraction.add_rider()
@@ -3525,13 +3705,13 @@ class Visitor:
             yield attraction.attraction.get_ride_start()
 
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} si užívá jízdu na atrakci {attraction_cz_name}."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             yield attraction.attraction.get_ride_end()
 
             message = f"ČAS {time_converter.get_real_time()}: Jízda atrakce {attraction_cz_name} skončila a {self.name} {self.surname} odchází z atrakce."
-            print(message)
+            
             logs.log_visitor(self, message)
 
             attraction_instance.sub_rider()
@@ -3552,7 +3732,7 @@ class Visitor:
         time_converter = controller.get_time_converter()
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} pro tento den odjíždí z festivalu."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         festival.decrease_num_people_in_zone(source.Locations.SPAWN_ZONE.name)
@@ -3560,7 +3740,7 @@ class Visitor:
         festival.increase_num_people_in_zone(source.Locations.SPAWN_ZONE.name)
 
         message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} přijel zpátky na festival."
-        print(message)
+        
         logs.log_visitor(self, message)
 
         self.state["hygiene"] = random.randint(85, 100)
@@ -3580,14 +3760,14 @@ def spawn_groups(env, groups_list, controller):
     start_simulation = time_converter.get_start_time()
     start_shows = festival.get_lineup()[0][0]["start_playing_time"] + start_simulation
     time_to_arrive = start_shows - start_simulation
-    spacings = time_to_arrive / festival.get_num_visitors()
+    spacings = time_to_arrive / len(groups_list)
 
     for group in groups_list:
         id = group.get_group_id()
 
         yield env.timeout(random.uniform(0, spacings))
         message = f"ČAS {time_converter.get_real_time()}: Skupina číslo {id} dorazila na festival"
-        print(message)
+        
         logs.log_message(message)
         group.set_group_actual_zone(source.Locations.SPAWN_ZONE)
 
@@ -3596,7 +3776,7 @@ def spawn_groups(env, groups_list, controller):
             festival.increase_num_people_in_zone(source.Locations.SPAWN_ZONE.name)
             
             message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.get_name()} dorazil na festival."
-            print(message)
+            
             logs.log_visitor(member, message)
             
         env.process(group.group_decision_making(controller))
