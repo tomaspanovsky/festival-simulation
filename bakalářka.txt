@@ -1,4 +1,0 @@
-Knihovny v pythonu pro simulaci:
-SimPy pro simulaci událostí a procesů.
-PyGame pro vizualizaci pohybu lidí.
-NetworkX pro modelování sociálních interakcí mezi lidmi.

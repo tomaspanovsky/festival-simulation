@@ -11,29 +11,29 @@
             "id": 15,
             "stall_name": "beer_stall",
             "stall_cz_name": "pivní stánek",
-            "max_queue_length": 10,
-            "max_waiting_time": 2.426776152839693
+            "max_queue_length": 2,
+            "max_waiting_time": 0.9578022194194773
         },
         {
             "id": 16,
             "stall_name": "beer_stall",
             "stall_cz_name": "pivní stánek",
-            "max_queue_length": 14,
-            "max_waiting_time": 3.265426949106356
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 28,
             "stall_name": "beer_stall",
             "stall_cz_name": "pivní stánek",
-            "max_queue_length": 18,
-            "max_waiting_time": 3.6343187203777205
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 9,
             "stall_name": "burger_stall",
             "stall_cz_name": "burger stánek",
-            "max_queue_length": 3,
-            "max_waiting_time": 1.4495844131311628
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 33,
@@ -53,8 +53,8 @@
             "id": 10,
             "stall_name": "gyros_stall",
             "stall_cz_name": "gyros stánek",
-            "max_queue_length": 73,
-            "max_waiting_time": 95.60032113611487
+            "max_queue_length": 3,
+            "max_waiting_time": 9.43575290002667
         },
         {
             "id": 18,
@@ -81,22 +81,22 @@
             "id": 13,
             "stall_name": "nonalcohol_stall",
             "stall_cz_name": "nealko stánek",
-            "max_queue_length": 19,
-            "max_waiting_time": 3.3153918023688362
+            "max_queue_length": 1,
+            "max_waiting_time": 0
         },
         {
             "id": 14,
             "stall_name": "nonalcohol_stall",
             "stall_cz_name": "nealko stánek",
-            "max_queue_length": 12,
-            "max_waiting_time": 2.8884358128744054
+            "max_queue_length": 1,
+            "max_waiting_time": 0
         },
         {
             "id": 29,
             "stall_name": "nonalcohol_stall",
             "stall_cz_name": "nealko stánek",
-            "max_queue_length": 15,
-            "max_waiting_time": 3.0505360758292284
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 8,
@@ -130,43 +130,43 @@
             "id": 4,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 21,
-            "max_waiting_time": 3.65641147771694
+            "max_queue_length": 6,
+            "max_waiting_time": 0.2783507076832876
         },
         {
             "id": 5,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 22,
-            "max_waiting_time": 2.5436325428519737
+            "max_queue_length": 3,
+            "max_waiting_time": 0
         },
         {
             "id": 6,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 10,
-            "max_waiting_time": 1.3591982359261436
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 7,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 11,
-            "max_waiting_time": 1.1655225311498416
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 30,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 4,
-            "max_waiting_time": 0.7102414571589932
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 31,
             "stall_name": "ticket_booth",
             "stall_cz_name": "pokladna",
-            "max_queue_length": 1,
-            "max_waiting_time": 0.17962857995614812
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 17,
@@ -351,7 +351,7 @@
             "id": 25,
             "stall_name": "entrance",
             "stall_cz_name": "vstup",
-            "max_queue_length": 4,
+            "max_queue_length": 0,
             "max_waiting_time": 0
         },
         {
@@ -365,8 +365,8 @@
             "id": 70,
             "stall_name": "gyros_stall",
             "stall_cz_name": "gyros stánek",
-            "max_queue_length": 1,
-            "max_waiting_time": 6.320041261672941
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 85,
@@ -635,8 +635,8 @@
             "id": 67,
             "stall_name": "beer_stall",
             "stall_cz_name": "pivní stánek",
-            "max_queue_length": 16,
-            "max_waiting_time": 10.632922629580477
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 61,
@@ -684,8 +684,8 @@
             "id": 103,
             "stall_name": "nonalcohol_stall",
             "stall_cz_name": "nealko stánek",
-            "max_queue_length": 8,
-            "max_waiting_time": 2.422529567501101
+            "max_queue_length": 0,
+            "max_waiting_time": 0
         },
         {
             "id": 60,
