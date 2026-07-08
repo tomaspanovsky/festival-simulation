@@ -488,13 +488,10 @@ Technická dokumentace popisuje vnitřní strukturu aplikace, datové modely a p
 \subsection{Architektura aplikace}
 Aplikace je implementována jako samostatná desktopová aplikace v jazyce Python, která nevyžaduje připojení k internetu ani žádné externí služby. Celá aplikace běží lokálně a jednotlivé části aplikace spolu komunikují přímo prostřednictvím interních datových struktur.
 
-Uživatelské rozhraní je realizováno pomocí knihovny Tkinter a jejího rozšíření CustomTkinter, které zajišťují vykreslování oken, ovládacích prvků a interaktivních prvků editoru festivalového areálu. Logika aplikace je oddělena od grafické vrstvy, což umožňuje přehlednou správu dat a snadnější rozšiřování funkcionality.
-
+\subsubsection{Struktura aplikace}
 Aplikace je tvořena několika hlavními moduly: editorem festivalového areálu, modulem pro správu objektů a zón, generátorem lineupu, modulem reprezentace návštěvníků a simulačním jádrem. Editor umožňuje uživateli sestavit festivalový areál, který je následně předán simulačnímu jádru. Simulační jádro zpracovává čas, potřeby návštěvníků, jejich rozhodování, pohyb mezi zónami a interakce s objekty.
 
 Jednotlivé moduly jsou navrženy tak, aby byly co nejvíce nezávislé. Editor pracuje s datovými strukturami objektů a zón, zatímco simulační jádro pracuje s instancemi návštěvníků a jejich stavy. Výsledky simulace jsou průběžně předávány zpět grafické vrstvě, která je vizuálně zobrazuje uživateli.
-
-Tato architektura umožňuje snadné rozšiřování aplikace o nové typy objektů, zón, chování návštěvníků nebo vizualizační prvky, aniž by bylo nutné zásadně měnit strukturu celého systému.
 
 \subsection{Datové struktury}
 \subsubsection{Stuktura návštěvníka}
