@@ -1,14 +1,15 @@
-import simpy
 import random
-import source
-import resources
-import foods
-import items
-import times
 import copy
-from gui import loading
+
+from src import source
+from src import resources
+from src import foods
+from src import items
+from src.BFS import resolve_need, get_zone_from_move_command, find_the_way
+
+from src.gui import loading
 from outputs.code import logs
-from BFS import resolve_need, get_zone_from_move_command, find_the_way
+
 
 class Group:
     def __init__(self, festival, members, type, group_id):
@@ -1876,7 +1877,6 @@ class Visitor:
 # -----------------------------------------------STOLY---------------------------------------------------------------
 
     def sit(self, stall, controller, travel_time):
-        festival = controller.get_festival()
         time_converter = controller.get_time_converter()
         table = stall.get_resource()
         """Funkce, která obsluju návštěvníkův pokus najít volný stůl a sednout si"""

@@ -1,8 +1,9 @@
 import random
-import source
 import math
 import operator
-import times
+
+from src import source
+from src import times
 from outputs.code import logs
 
 def_time_converter = times.TimeConverter(None, None)

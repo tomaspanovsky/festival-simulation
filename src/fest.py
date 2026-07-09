@@ -1,5 +1,4 @@
 from outputs.code import logs
-import source
 
 class Festival:
     def __init__(self, env, visitors, groups, num_days, line_up, stalls, prices, possible_actions, stalls_opening_hours):

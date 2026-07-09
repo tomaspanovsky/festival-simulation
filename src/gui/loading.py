@@ -1,5 +1,5 @@
 import json
-import source
+from src import source
 from tkinter import filedialog
 
 def load_festival_area(auto=False):

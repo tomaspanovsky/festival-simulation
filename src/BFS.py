@@ -1,4 +1,4 @@
-from gui import loading
+from src.gui import loading
 from collections import deque
 import copy
 

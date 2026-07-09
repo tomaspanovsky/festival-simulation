@@ -1,5 +1,5 @@
-import times
-import source
+from src import times
+from src import source
 from outputs.code import logs
 
 class Attraction:

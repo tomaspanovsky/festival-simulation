@@ -1,7 +1,6 @@
 import json
-import os
 from tkinter import filedialog
-import source
+from src import source
 
 def save(zones_data, auto = None):
     with open(source.file_path_festival_settings, "w") as f:

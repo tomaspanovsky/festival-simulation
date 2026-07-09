@@ -1,11 +1,11 @@
-import json
 import simpy
-import locations
-import source
 import random
-import drinks
-import attractions
-from gui import loading
+
+from src import locations
+from src import source
+from src import drinks
+from src import attractions
+from src.gui import loading
 from outputs.code.logs import log_message
 
 class Stall:

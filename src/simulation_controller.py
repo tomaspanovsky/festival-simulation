@@ -1,4 +1,4 @@
-import gui.gui as gui
+from src.gui import gui 
 from outputs.code import logs
 
 class SimulationController:

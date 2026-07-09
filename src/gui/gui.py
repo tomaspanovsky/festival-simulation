@@ -5,25 +5,27 @@ import customtkinter as ctk
 from PIL import Image, ImageOps, ImageTk
 import copy
 import simpy
-from gui import saving
-from gui import loading 
-import source
-import visitors
-import bands
-import resources
-import simulation
-import fest
-import foods
-import drinks
-import random
-import source
-import times
-import time
-import simulation_controller
 import threading
 import os
-import gui.validation as validation
-import BFS
+import time
+import random
+
+from src.gui import saving
+from src.gui import loading 
+from src import source
+from src import visitors
+from src import bands
+from src import resources
+from src import simulation
+from src import fest
+from src import foods
+from src import drinks
+from src import source
+from src import times
+from src import simulation_controller
+from src import BFS
+
+import src.gui.validation as validation
 from outputs.code import logs
 
 current_zone = None         

@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-import times
+from src import times
 
 visitors_logs = {}
 all_messages = []

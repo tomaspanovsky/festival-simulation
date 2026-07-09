@@ -1,4 +1,4 @@
-import times
+from src import times
 
 validate_time_converter = times.TimeConverter(None, None)
 def validate_int_range(key, value, min, max):

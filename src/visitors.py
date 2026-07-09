@@ -1,9 +1,11 @@
+import math
 import simpy
 import random
-import source
-import simulation
-import items
-import math
+
+from src import source
+from src import simulation
+from src import items
+
 from outputs.code import logs
 
 def create_visitors(num_visitors, environment, available_foods, available_soft_drinks, available_alcohol_drinks, on_site_ticket_price, pre_sale_ticket_price, camping_area_price, cap_tents):

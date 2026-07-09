@@ -1,6 +1,7 @@
-import source
 import random
-import resources
+
+from src import source
+from src import resources
 
 def find_all_foods_at_festival(food_stalls_at_festival):
     foods = []
