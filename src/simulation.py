@@ -10,7 +10,6 @@ from src.BFS import resolve_need, get_zone_from_move_command, find_the_way
 from src.gui import loading
 from outputs.code import logs
 
-
 class Group:
     def __init__(self, festival, members, type, group_id):
         self.env = festival

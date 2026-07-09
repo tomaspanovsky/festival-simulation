@@ -1,7 +1,6 @@
 import simpy
 import random
 
-from src import locations
 from src import source
 from src import drinks
 from src import attractions
@@ -269,12 +268,12 @@ def create_resources(env, capacities, num_visitors, time_converter, opening_time
                     new_stall.set_string_opening_hours(opening_times["outside_festival_area"])
 
             if stall["name"] == "meadow_for_living":
-                positions = locations.create_positions(capacities["meadow_for_living"])
+                positions = create_positions(capacities["meadow_for_living"])
                 new_stall.positions = positions
                 meadows += 1
 
             if stall["name"] == "charging_stall":
-                positions = locations.create_positions(capacities["charging_stall_mobile"])
+                positions = create_positions(capacities["charging_stall_mobile"])
                 new_stall.positions = positions
 
             if stall["type"] == "attraction":
@@ -488,3 +487,11 @@ def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
         message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě zavřel."
         log_message(message)
 
+def create_positions(capacity):
+    
+    area = [capacity]
+
+    for i in range(capacity):
+        area.append([])
+
+    return area
