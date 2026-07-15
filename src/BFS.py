@@ -36,7 +36,6 @@ def resolve_need(type, need, instance, festival, actual_zone=None):
                 target_zones.append(zone_name)
 
         if not target_zones:
-            print(f"ERROR: Žádná připojená zóna neumí uspokojit potřebu {need}")
             return None
         
         return BFS(actual_zone, target_zones) if not tent_area_forbidden else BFS(actual_zone, target_zones, tent_area_forbidden = True)

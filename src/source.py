@@ -22,6 +22,31 @@ file_path_highlighs = os.path.join(base_dir, "data/gui_editable", "highlighs.jso
 file_path_stall_en_to_cz_names = os.path.join(base_dir, "data", "stall_en_to_cz_names.json")
 file_path_stalls_opening_hours = os.path.join(base_dir, "data/gui_editable", "opening_hours.json")
 
+
+class Gender(enum.Enum):
+    MALE = "muž"
+    FEMALE = "žena"
+
+class Age_category(enum.Enum):
+    CHILD = "dítě"
+    YOUTH = "mladiství"
+    ADULT = "dospělý"
+    SENIOR = "důchodce"
+
+class Parents(enum.Enum):
+    FATHER = "otec"
+    MOTHER = "matka"
+
+class Attraction_states(enum.Enum):
+    RUNNING = "running"
+    WAITING = "waiting"
+
+class Possible_actions_situations(enum.Enum):
+    ALL_ON = "all_on"
+    ALL_OFF = "all_off"
+    INSIDE_OFf_OUTSIDE_ON = "inside_off_outside_on"
+    INSIDE_ON_OUTSIDE_OFF = "inside_on_outside_off"
+
 class Groups(enum.Enum):
     GROUP = "skupina"
     FAMILY = "rodina"
@@ -53,38 +78,6 @@ cocktails = drinks_data["cocktails"]
 drink_stalls = drinks_data["stalls"]
 drinks = drinks_data["drinks"]
 cup_requirement = drinks_data["cup_requirement"]
-
-class Weather(enum.Enum):
-    RAINING = "déšť"
-    HOT = "horko"
-    COLD = "chladno"
-    STORM = "bouřka"
-    PARTLY_CLOUDY = "polojasno"
-    SUNNY = "slunečno"
-    
-class Gender(enum.Enum):
-    MALE = "muž"
-    FEMALE = "žena"
-
-class Age_category(enum.Enum):
-    CHILD = "dítě"
-    YOUTH = "mladiství"
-    ADULT = "dospělý"
-    SENIOR = "důchodce"
-
-class Parents(enum.Enum):
-    FATHER = "otec"
-    MOTHER = "matka"
-
-class Attraction_states(enum.Enum):
-    RUNNING = "running"
-    WAITING = "waiting"
-
-class Possible_actions_situations(enum.Enum):
-    ALL_ON = "all_on"
-    ALL_OFF = "all_off"
-    INSIDE_OFf_OUTSIDE_ON = "inside_off_outside_on"
-    INSIDE_ON_OUTSIDE_OFF = "inside_on_outside_off"
 
 with open(file_path_names, "r", encoding="utf-8") as f:
     names_data = json.load(f)

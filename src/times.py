@@ -16,8 +16,8 @@ class TimeConverter:
         mins = minutes % 60
         return f"{hours:02d}:{mins:02d}"
 
-    def format_time_string_to_mins(self, string):
-        hours, minutes = map(int, string.split(":"))
+    def format_time_string_to_mins(self, time):
+        hours, minutes = map(int, time.split(":"))
         total_minutes = hours * 60 + minutes
         return total_minutes
 

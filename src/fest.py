@@ -1,9 +1,8 @@
 from outputs.code import logs
 
 class Festival:
-    def __init__(self, env, visitors, groups, num_days, line_up, stalls, prices, possible_actions, stalls_opening_hours):
+    def __init__(self, env, groups, num_days, line_up, stalls, prices, possible_actions, stalls_opening_hours):
         self.env = env
-        self.visitors = visitors
         self.groups = groups
         self.num_days = num_days
         self.line_up = line_up
@@ -15,11 +14,9 @@ class Festival:
         self.possible_actions_situation = {"inside": False, "outside": False}
         self.stalls_opening_hours = stalls_opening_hours
         self.merch = None
-        self.pause_between_shows = None
         self.now_playing_band = None
         self.now_signing_band = None
         self.signing_order = None
-        self.num_people_in_zones = {"SPAWN_ZONE": 0, "ENTRANCE_ZONE": 0, "FESTIVAL_AREA": 0, "CHILL_ZONE": 0, "TENT_AREA": 0, "FUN_ZONE": 0}
 
     def get_price(self, price_of_what):
         return self.prices[price_of_what]
@@ -41,9 +38,6 @@ class Festival:
     
     def get_actual_day(self):
         return self.actual_day
-
-    def get_num_people_in_zones(self):
-        return self.num_people_in_zones
     
     def get_stalls(self):
         return self.stalls
@@ -65,12 +59,6 @@ class Festival:
 
         return attraction_stalls
     
-    def get_num_visitors(self):
-        return len(self.visitors)
-    
-    def get_visitors(self):
-        return self.visitors
-    
     def get_merch(self):
         return self.merch
     
@@ -79,17 +67,6 @@ class Festival:
     
     def get_signing_order(self):
         return self.signing_order
-    
-    def increase_num_people_in_zone(self, zone):
-        self.num_people_in_zones[zone] += 1
-
-    def decrease_num_people_in_zone(self, zone):
-
-        if zone == "SIGNING_STALL" or zone == "STAGE_STANDING":
-            zone = "FESTIVAL_AREA"
-            
-        if self.num_people_in_zones[zone] > 0:
-            self.num_people_in_zones[zone] -= 1
 
     def next_day(self):
         self.actual_day += 1
@@ -115,11 +92,17 @@ class Festival:
     
     def set_possible_actions_situation(self, inside=None, outside=None):
         if inside:
-            self.possible_actions_situation["inside"] = inside
+            if inside == 2:
+                self.possible_actions_situation["inside"] = True
+            elif inside == 1:
+                self.possible_actions_situation["inside"] = False
 
         if outside:
-            self.possible_actions_situation["outside"] = outside
-    
+            if outside == 2:
+                self.possible_actions_situation["outside"] = True
+            elif outside == 1:
+                self.possible_actions_situation["outside"] = False
+
     def cancel_signing_band(self):
         self.now_signing_band = None
 

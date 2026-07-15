@@ -51,6 +51,7 @@ time_converter = False
 hover_text_id = None
 last_hover_check = 0
 last_gui_update = 0
+groups_of_visitors = None
 
 zones_data = {
     "Spawn zóna": {},
@@ -72,7 +73,7 @@ def run_app():
     
     def start():
         nonlocal controller, value, loaded, env
-        global current_mode, selected_object, zones_data, simulation_start_time, festival_env, actual_day, actual_time, time_converter
+        global current_mode, selected_object, zones_data, simulation_start_time, festival_env, actual_day, actual_time, time_converter, groups_of_visitors
 
         if not loaded:
             show_message("Musí být načten nebo vytvořen a uložen festivalový areál!")
@@ -123,7 +124,6 @@ def run_app():
         time_converter.set_start_time_to_minutes()
         simulation_start_time = time_converter.get_start_time()
         stalls, meadows, stalls_opening_hours = resources.create_resources(festival_env, capacities, num_visitors, time_converter, stalls_opening_hours, num_days)
-        logs.add_stalls_to_logs(stalls)
 
         food_stalls_names = resources.find_all_type_stall_at_festival(stalls, "foods")
         drink_stalls_names = resources.find_all_type_stall_at_festival(stalls, "drinks")
@@ -143,7 +143,7 @@ def run_app():
         lineup = loading.load_settings(source.file_path_lineup)
         lineup = bands.convert_lineup_to_mins(lineup, simulation_start_time)
         people = bands.add_favorite_bands_to_visitor(people, lineup)
-        festival = fest.Festival(festival_env, people, groups_of_visitors, num_days, lineup, stalls, prices, possible_actions, stalls_opening_hours)
+        festival = fest.Festival(festival_env, groups_of_visitors, num_days, lineup, stalls, prices, possible_actions, stalls_opening_hours)
         festival_env.process(festival.watch_possible_actions())
         
         if "want_merch" in possible_actions_all_on:
@@ -153,6 +153,7 @@ def run_app():
         stage = resources.find_stall_with_shortest_queue_in_zone(festival_env, festival, "stage")
 
         controller = simulation_controller.SimulationController(festival_env, festival, time_converter)
+        festival_env.process(controller.state_updater())
 
         resources.set_stalls_schedules(stalls, controller, canvas, GRAY_OBJECT_IMAGES, OBJECT_IMAGES)
 
@@ -163,7 +164,6 @@ def run_app():
             bands.set_bands(festival_env, lineup, stage, None, controller)
 
         festival_env.process(simulation.spawn_groups(festival_env, groups_of_visitors, controller))
-
 
         editor_buttons_frame.pack_forget()
         frame_left.pack_forget()
@@ -176,12 +176,22 @@ def run_app():
         update_day_time_labels(1, main_settings["simulation_start_time"])
 
         message = f"ČAS {time_converter.get_real_time()}: START SIMULACE"
-        print(message)
         logs.log_message(message)
 
         message = f"ČAS {time_converter.get_real_time()}: 1. DEN"
-        print(message)
         logs.log_message("1. DEN:")
+        
+        visitors.print_visitors(people)
+
+    def end_of_simulation():
+        global groups_of_visitors
+
+        current_dir = os.path.join(os.getcwd(), "outputs")
+        logs.log_message("SIMULACE UKONČENA")
+        logs.process_results(controller)
+        logs.add_groups_to_logs(groups_of_visitors)
+        logs.save_logs()
+        show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
 
     def get_possible_actions():
         actions_by_locations = loading.load_festival_settings_data("ACTIONS_BY_LOCATIONS")
@@ -294,10 +304,7 @@ def run_app():
         move_forward_actions()
 
         if done:
-            current_dir = os.path.join(os.getcwd(), "outputs")
-            logs.log_message("SIMULACE UKONČENA")
-            logs.save_logs()
-            show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
+            end_of_simulation()
 
     def start_smooth_simulation():
         smooth_simulation_start_button.pack_forget()
@@ -330,22 +337,17 @@ def run_app():
             root.after(0, lambda: move_forward_actions())
 
             if done:
-                logs.log_message("SIMULACE UKONČENA")
-                logs.save_logs()
-                current_dir = os.path.join(os.getcwd(), "outputs")
-                show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
+                end_of_simulation()
             
             time.sleep(1)
             
     def automatic_simulation():
         env = controller.get_env()
+        controller.state_updater_on()
         num_days = controller.get_festival().get_num_days()
         env.run(until=num_days * 1440)
-
-        logs.log_message("SIMULACE UKONČENA")
-        logs.save_logs()
-        current_dir = os.path.join(os.getcwd(), "outputs")
-        show_message(f"Simulace úspěšně dokončena! Výsledky simulace jsou umístěny ve složce:\n{current_dir}", sim_done=True)
+        controller.state_updater_off()
+        end_of_simulation()
 
     def move_forward_actions():
         global time_converter, last_gui_update
@@ -360,7 +362,7 @@ def run_app():
         day = festival.get_actual_day()
         
         new_logs = get_new_logs()
-        controller.get_actual_state()
+        controller.get_simulation_state()
         view_changes(controller)
         update_day_time_labels(day, time_converter.get_real_time())
         view_logs(new_logs)
@@ -792,7 +794,7 @@ def run_app():
         
     def save_actual_state():
         logs.save_actual_state(controller)
-        show_message("Nastavení uloženo")
+        show_message("Aktuální stav zaznamenán")
 
     def save_merch():
         merch = get_merch_settings()
@@ -2185,7 +2187,6 @@ def run_app():
         "Zábavní zóna": ["Bungee-jumping", "Horská dráha", "Lavice", "Kladivo", "Řetizkáč", "Skákací hrad", "Nealko stánek", "Pivní stánek","Stánek s míchanými drinky", "Red Bull stánek", "Bankomat"]
     }
 
-    # Funkce pro výběr objektu
     def select_object(obj_name):
         global current_object, object_buttons
 
@@ -2206,8 +2207,7 @@ def run_app():
 
         if obj_name in object_buttons:
             object_buttons[obj_name].configure(fg_color="yellow", text_color="black")
-                                    
-    # Funkce pro výběr zóny (typ)
+
     def select_zone(zone_name):
 
         global current_zone, object_buttons, current_object
@@ -2220,7 +2220,6 @@ def run_app():
 
         zone_buttons[zone_name].configure(fg_color="yellow", text_color="black")
 
-        # Vyčistí pravý panel a naplní objekty pro tento typ zóny
         for widget in frame_right.winfo_children():
             widget.destroy()
 
@@ -2235,7 +2234,6 @@ def run_app():
             btn.pack(pady=3)
             object_buttons[obj] = btn
 
-    # Vytvoření tlačítek pro zóny
     for zone_name in zones_data.keys():
         btn = zone_button(frame_left, zone_name)
         btn.pack(pady=5)
@@ -2245,8 +2243,6 @@ def run_app():
 
     modes_frame = tk.Frame(frame_left, bg="white")
     modes_frame.pack(pady=5)
-
-    # Funkce pro výběr režimu
 
     def select_mode(mode_name):
         global current_mode, selected_zone, selected_object, selected_line
@@ -2264,59 +2260,48 @@ def run_app():
 
         print(f"Režim vybrán: {current_mode}")
 
-        # Reset barvy všech tlačítek
         for btn in mode_buttons.values():
             btn.configure(fg_color="white", text_color="black")
 
-        # Zvýraznit vybraný
         mode_buttons[mode_name].configure(fg_color="yellow", text_color="black")
 
-    # Tlačítka pro režimy
+
     mode_buttons = {}
     mode_icons = {"add": "➕", "edit": "➤", "connect": "🔗"}
     mode_labels_text = {"add": "Přidat", "edit": "Editovat", "connect": "Spojit"}
 
     for i, (mode_name, symbol) in enumerate(mode_icons.items()):
 
-        # rámec pro label + tlačítko
         btn_frame = tk.Frame(modes_frame, bg="white")
         btn_frame.pack(side="left", padx=5)
 
-        # label nad tlačítkem
         lbl = tk.Label(btn_frame, text=mode_labels_text.get(mode_name, ""), font=("Arial", 10, "bold"), bg="white")
         lbl.pack()
 
-        # tlačítko
         btn = mode_button(btn_frame, symbol)
         btn.pack()
         mode_buttons[mode_name] = btn
     
     select_mode("add")
 
-    # Pomocná funkce, která najde instanci zóny, do které patří bod x,y
     def find_zone_instance_for_point(zone_type, x, y):
         inst = zones_data.get(zone_type)
         if not inst:
             return None
 
-        # kontrola hlavní oblasti zóny
         if inst["left"] <= x <= inst["right"] and inst["top"] <= y <= inst["bottom"]:
             return inst
 
-        # kontrola objektů v zóně
         for obj in inst.get("objects", []):
             coords_list = []
 
-            # hlavní tvar objektu
             main_id = obj["canvas_ids"][0]
             coords_list.append(canvas.coords(main_id))
 
-            # extra objekty (např. stání u podia)
             for extra in obj.get("extra", []):
                 extra_id = extra["canvas_ids"][0]
                 coords_list.append(canvas.coords(extra_id))
 
-            # projdeme všechny bounding boxy
             for coords in coords_list:
                 left, top, right, bottom = coords
                 if left <= x <= right and top <= y <= bottom:
@@ -2612,7 +2597,6 @@ def run_app():
             label_id = zone.get("num_visitors_label_id")
             canvas.itemconfig(label_id, text=f"Návštěvníků v zóně: {count}")
 
-    # Funkce pro vkládání objektů
     def place_object(event):
         global current_object, current_zone, zones_data, current_mode
 
@@ -2620,7 +2604,6 @@ def run_app():
 
         instance = find_zone_instance_for_point(current_zone, x, y)
 
-        # speciální logika pro vstup
         if current_object == "Vstup":
             fest_zone = zones_data.get("Festivalový areál")
 
@@ -2638,7 +2621,6 @@ def run_app():
             show_message("Objekt musí být umístěn do správné zóny.")
             return
 
-        # vytvoření objektu
         obj_data = create_object(instance, current_object, x, y)
         instance.setdefault("objects", []).append(obj_data)
 
@@ -2766,7 +2748,7 @@ def run_app():
                 continue
 
             for obj in zone.get("objects", []):
-                # každý objekt má canvas_ids
+    
                 for cid in obj.get("canvas_ids", []):
                     if cid in items:
                         return obj
@@ -2825,12 +2807,10 @@ def run_app():
     def handle_add_click(event):
         global drawing, last_x, last_y, zone_rect, zone_label, current_object, current_zone, selected_zone, selected_object, selected_line
 
-        # 1) musí být vybraná zóna
         if current_zone is None:
             print("Není vybrána žádná zóna.")
             return
 
-        # 2) pokud je vybraný objekt → umisťujeme objekt
         if current_object is not None:
 
             if current_object == "Stan na autogramiády" and is_object_in_zone(zones_data, current_zone, current_object):
@@ -2842,17 +2822,14 @@ def run_app():
             
             return
 
-        # 3) kontrola, zda zóna už existuje (jen jedna instance)
         zone_info = zones_data[current_zone]
         if zone_info:
             show_message(f"Zóna {current_zone} již existuje")
             return
 
-        # 4) začínáme kreslit novou zónu
         drawing = True
         last_x, last_y = event.x, event.y
 
-        # smazat staré náhledy
         if zone_rect is not None:
             canvas.delete(zone_rect)
             zone_rect = None
@@ -2952,13 +2929,11 @@ def run_app():
         canvas.itemconfig(zone["rect_id"], outline="red", width=4)
         print(f"Označená zóna: {zone["type"]}")
 
-        # zjištění resize směru
         resize_info = get_resize_direction(zone, event.x, event.y)
         print("Resize info:", resize_info)
 
         if resize_info:
 
-            # speciální pravidlo pro Festivalový areál
             if zone["type"] == "Festivalový areál":
                 for obj in zone.get("objects", []):
                     if obj.get("object") == "Vstup":
@@ -3077,7 +3052,6 @@ def run_app():
 
         clicked_obj = find_clicked_object(event)
 
-        # zjistíme, jestli jsme klikli na zónu
         clicked_zone = None
         for zone_type, inst in zones_data.items():
             if not inst:
@@ -3087,14 +3061,12 @@ def run_app():
                 clicked_zone = inst
                 break
 
-        # nic nekliknuto → reset
         if not clicked_zone and not clicked_obj:
             if connect_start_zone and "rect_id" in connect_start_zone:
                 canvas.itemconfig(connect_start_zone["rect_id"], outline="blue", width=3)
             connect_start_zone = None
             return
 
-        # pokud ještě není start
         if connect_start_zone is None:
             if clicked_obj and clicked_obj.get("object") == "Vstup":
                 if "id" not in clicked_obj:
@@ -3109,28 +3081,25 @@ def run_app():
 
             return
 
-        # máme první klik → teď spojujeme
         first = connect_start_zone
         second_zone = clicked_zone
         second_obj = clicked_obj
 
-        # -------- start = vstup --------
+
         if isinstance(first, dict) and first.get("object") == "Vstup":
-            if second_zone:  # klik na zónu
+            if second_zone: 
                 connect_entry_to_zone(first, second_zone)
             else:
                 print("Špatný klik, vstup → něco nekliknutého")
 
-        # -------- start = zóna --------
         elif isinstance(first, dict) and "type" in first:
-            if second_obj and second_obj.get("object") == "Vstup":  # klik na vstup
+            if second_obj and second_obj.get("object") == "Vstup":  
                 connect_zone_to_entry(first, second_obj)
-            elif second_zone:  # klik na jinou zónu
+            elif second_zone:  
                 connect_zone_to_zone(first, second_zone)
             else:
                 print("Špatný klik, zóna → něco nekliknutého")
 
-        # nakonec reset + odznačení start zóny
         if isinstance(first, dict) and "rect_id" in first:
             canvas.itemconfig(first["rect_id"], outline="blue", width=3)
 
@@ -3143,7 +3112,6 @@ def run_app():
 
         vstup_zone = None
 
-        # najdeme zónu, ve které je tento vstup umístěný
         for zt, inst in zones_data.items():
             if not inst:
                 continue
@@ -3170,7 +3138,6 @@ def run_app():
         line_id = canvas.create_line(x1, y1, x2, y2, fill="black", width=2)
         vstup_obj["locked"] = True
 
-        # uložíme do lines
         vstup_zone.setdefault("lines", []).append({
             "id": line_id,
             "other_zone": {
@@ -3193,7 +3160,6 @@ def run_app():
 
         vstup_zone = None
 
-        # najdeme zónu, ve které je tento vstup umístěný
         for zt, inst in zones_data.items():
             if not inst:
                 continue
@@ -3486,7 +3452,6 @@ def run_app():
         
         print("[DRAG EVENT] at", event.x, event.y)
 
-        # pokud není startovní souřadnice, nic se nestane
         if last_x is None or last_y is None:
             print("nemáme startovací souřadnice")
             return
@@ -3494,12 +3459,10 @@ def run_app():
         dx = event.x - last_x
         dy = event.y - last_y
 
-        # pokud je vybraný objekt, posunem ho
         if selected_object and current_mode == "edit" and is_dragging_object:
             if selected_object.get("locked"):
                 return
 
-            # najdeme zónu, do které objekt patří
             parent_zone = None
             for zone_type, inst in zones_data.items():
                 if not inst:
@@ -3509,24 +3472,19 @@ def run_app():
                     parent_zone = inst
                     break
 
-            # --- SPECIÁLNÍ LOGIKA PRO VSTUP ---
             if selected_object["object"] == "Vstup":
 
-                # vypočítáme nové souřadnice středu po posunu
                 new_x = selected_object["x"] + dx
                 new_y = selected_object["y"] + dy
 
-                # vstup smí být jen na festivalovém areálu
                 if parent_zone["type"] != "Festivalový areál":
                     print("Vstup lze přesouvat pouze na festivalovém areálu.")
                     return
 
-                # musí zůstat na hraně
                 if not is_on_edge(parent_zone, new_x, new_y):
                     print("Vstup lze přesouvat pouze po hraně festivalového areálu.")
                     return
 
-                # pokud prošel kontrolou → posuneme ho
                 for cid in selected_object.get("canvas_ids", []):
                     canvas.move(cid, dx, dy)
 
@@ -3539,9 +3497,7 @@ def run_app():
 
                 last_x, last_y = event.x, event.y
                 return
-            # --- KONEC SPECIÁLNÍ LOGIKY PRO VSTUP ---
 
-            # --- BĚŽNÉ OBJEKTY ---
             if parent_zone:
                 zone_left = parent_zone["left"]
                 zone_top = parent_zone["top"]
@@ -3550,7 +3506,6 @@ def run_app():
 
                 obj_left, obj_top, obj_right, obj_bottom = canvas.bbox(selected_object["canvas_ids"][1])
 
-                # omezení dx, dy, aby objekt nevyskočil z hranic zóny
                 if obj_left + dx < zone_left:
                     dx = zone_left - obj_left
                 if obj_right + dx > zone_right:
@@ -3560,7 +3515,6 @@ def run_app():
                 if obj_bottom + dy > zone_bottom:
                     dy = zone_bottom - obj_bottom
 
-            # posun běžného objektu
             for cid in selected_object.get("canvas_ids", []):
                 canvas.move(cid, dx, dy)
 
@@ -3574,7 +3528,6 @@ def run_app():
             last_x, last_y = event.x, event.y
             return
 
-        # pokud budeme měnit velikost zony
         if selected_zone and current_mode == "edit" and is_dragging_zone:
             
             RESIZE_TOLERANCE_OBJ = 50
@@ -3588,7 +3541,6 @@ def run_app():
                 old_bottom = selected_zone["bottom"]
                 old_coords = old_left, old_top, old_right, old_bottom
 
-                # upravíme souřadnice
                 if resize_info["left"]:
                     selected_zone["left"] += dx
                 if resize_info["right"]:
@@ -3613,14 +3565,13 @@ def run_app():
                     if inst:
                         other_zones.append(inst)
 
-                # pokud je překrytí, vrátíme staré souřadnice
                 if zone_overlaps(selected_zone, other_zones):
                     selected_zone["left"], selected_zone["top"], selected_zone["right"], selected_zone["bottom"] = old_coords
 
-                # omezíme posun, aby objekty zůstaly uvnitř
+
                 for obj in selected_zone.get("objects", []):
                     obj_x, obj_y = obj["x"], obj["y"]
-                    # pokud objekt vyjde mimo, vrátíme souřadnici zóny zpět
+
                     if obj_x - RESIZE_TOLERANCE_OBJ < selected_zone["left"]:
                         selected_zone["left"] = old_left
                     if obj_x + RESIZE_TOLERANCE_OBJ > selected_zone["right"]:
@@ -3630,7 +3581,6 @@ def run_app():
                     if obj_y + RESIZE_TOLERANCE_OBJ > selected_zone["bottom"]:
                         selected_zone["bottom"] = old_bottom
 
-                # aktualizujeme canvas
                 canvas.coords(
                     selected_zone["rect_id"],
                     selected_zone["left"],
@@ -3639,7 +3589,6 @@ def run_app():
                     selected_zone["bottom"]
                 )
 
-                # nadpis uprostřed nahoře
                 label_x = (selected_zone["left"] + selected_zone["right"]) / 2
                 label_y = selected_zone["top"] + 25
                 canvas.coords(selected_zone["label_id"], label_x, label_y)
@@ -3648,7 +3597,6 @@ def run_app():
 
                 last_x, last_y = event.x, event.y
 
-        # pokud kreslíme novou zónu
         if not drawing or current_object is not None:
             return
 
@@ -3784,7 +3732,7 @@ def run_app():
     RESIZE_TOLERANCE = 20 
 
     def delete_zone(zone):
-        # 1) Smazat grafiku z canvasu
+     
         canvas.delete(zone["rect_id"])
         canvas.delete(zone["label_id"])
 
@@ -3806,10 +3754,8 @@ def run_app():
     def delete_line(line_id):
         global zones_data
 
-        # 1) Smazat z canvasu
         canvas.delete(line_id)
 
-        # 2) Smazat ze všech zón
         for zone_type, zone in zones_data.items():
             if not zone:
                 continue
@@ -3839,7 +3785,6 @@ def run_app():
         if abs(y - bottom) <= RESIZE_TOLERANCE:
             resize_dir["bottom"] = True
 
-        # pokud žádná hrana, tak vrátí None → znamená přesouvání
         if not any(resize_dir.values()):
             return None
         return resize_dir
@@ -3852,11 +3797,9 @@ def run_app():
         fx1, fy1, fx2, fy2 = zone_from["left"], zone_from["top"], zone_from["right"], zone_from["bottom"]
         tx1, ty1, tx2, ty2 = zone_to["left"], zone_to["top"], zone_to["right"], zone_to["bottom"]
 
-        # střed zóny 2
         cx2 = (tx1 + tx2) / 2
         cy2 = (ty1 + ty2) / 2
 
-        # středy hran zóny 1
         top_center = ((fx1 + fx2) / 2, fy1)
         bottom_center = ((fx1 + fx2) / 2, fy2)
         left_center = (fx1, (fy1 + fy2) / 2)
@@ -3864,7 +3807,6 @@ def run_app():
 
         edges = [top_center, bottom_center, left_center, right_center]
 
-        # najdeme nejbližší bod
         closest = min(edges, key=lambda p: (p[0] - cx2)**2 + (p[1] - cy2)**2)
         return closest
 
@@ -3872,14 +3814,13 @@ def run_app():
         for line in zone.get("lines", []):
             other = line["other_zone"]
 
-            # rozlišení spojení přes vstup
             if "entry" in other:
-                # pevný bod je vstup
+               
                 x2, y2 = other["entry"]["x"], other["entry"]["y"]
-                # zóna – střed hrany nejblíže vstupu
                 x1, y1 = center_of_closest_edge(zone, x2, y2)
+
             else:
-                # normální zóna ↔ zóna
+          
                 other_zone = None
                 for zt, inst in zones_data.items():
                     if inst and inst["type"] == other["type"]:
@@ -3915,26 +3856,23 @@ def run_app():
             if not inst:
                 continue
 
-            # objekty v zóně
+
             for obj in inst.get("objects", []):
                 if obj["id"] > max_id:
                     max_id = obj["id"]
 
-                # extra objekty (např. Stání u podia)
                 for extra in obj.get("extra", []):
                     if extra["id"] > max_id:
                         max_id = extra["id"]
 
         object_id = max_id
 
-        # 1) vykreslit zóny
         for zone_type, inst in zones_data.items():
             if not inst:
                 continue
 
             draw_zone(inst)
 
-            # 2) vykreslit objekty
             for obj in inst.get("objects", []):
                 new_obj = create_object(inst, obj["object"], obj["x"], obj["y"], saved_object_id=obj["id"])
                 obj["canvas_ids"] = new_obj["canvas_ids"]
@@ -3944,7 +3882,6 @@ def run_app():
 
         print("Všechny zóny a objekty vykresleny.")
 
-        # 3) znovu vytvořit linky
         all_lines = []
 
         for zone_type, inst in zones_data.items():
@@ -3957,7 +3894,7 @@ def run_app():
                 zona2 = next((z for z in zones_data.values() if z and z.get("type") == target_name), None)
                 all_lines.append({"zona1": inst, "zona2": zona2, "line": line})
 
-        # reset lines
+
         for inst in zones_data.values():
             if inst:
                 inst["lines"] = []

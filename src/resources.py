@@ -8,15 +8,13 @@ from src.gui import loading
 from outputs.code.logs import log_message
 
 class Stall:
-    def __init__(self, stall_type, stall_name, stall_cz_name, zone, resource, id, x, y, opening_hours, canvas_ids, canvas_ids_extra = None):
+    def __init__(self, stall_type, stall_name, stall_cz_name, zone, resource, id, opening_hours, canvas_ids, canvas_ids_extra = None):
         self.stall_type = stall_type
         self.stall_name = stall_name
         self.stall_cz_name = stall_cz_name
         self.zone = zone
         self.resource = resource
         self.id = id
-        self.x = x
-        self.y = y
         self.opening_hours = opening_hours
         self.canvas_ids = canvas_ids
         self.canvas_ids_extra = canvas_ids_extra
@@ -25,7 +23,6 @@ class Stall:
         self.opend = False
         self.string_opening_hours = None
         self.color = ""
-        
 
     def get_name(self):
         return self.stall_name
@@ -86,6 +83,12 @@ class Stall:
 
     def set_color(self, color):
         self.color = color
+
+    def set_attraction(self, attraction):
+        self.attraction = attraction
+
+    def set_positions(self, positions):
+        self.positions = positions
     
     def get_capacity(self):
         if self.stall_name == "toitoi":
@@ -125,23 +128,18 @@ class Stall:
         elif self.stall_name == "meadow_for_living":
             count = 0
 
-            for tent in self.positions[1:]:
-                if tent:
-                    count += tent[0].count
-
+            for tent in self.positions.values():
+                if not isinstance(tent, int):
+                    count += tent.count
         else:
-            count = self.resource.count
+
+            if self.resource:
+                count = self.resource.count
 
         return count
     
     def get_num_tents(meadow_for_living):
-        num_tents = 0
-
-        for tent in meadow_for_living.positions[1:]:
-            if tent:
-                num_tents += 1
-
-        return num_tents
+        return len(meadow_for_living.get_positions()) - 1
     
     def get_num_in_queue(self):
         if self.stall_name == "toitoi":
@@ -254,8 +252,6 @@ def create_resources(env, capacities, num_visitors, time_converter, opening_time
                             entry_location if entry_location else location,
                             resource,
                             stall["id"],
-                            stall["x"],
-                            stall["y"],
                             opening_hours,
                             stall["canvas_ids"])
             
@@ -268,17 +264,21 @@ def create_resources(env, capacities, num_visitors, time_converter, opening_time
                     new_stall.set_string_opening_hours(opening_times["outside_festival_area"])
 
             if stall["name"] == "meadow_for_living":
-                positions = create_positions(capacities["meadow_for_living"])
-                new_stall.positions = positions
+                new_stall.set_positions({"free_spaces": capacities[stall["name"]]}) 
                 meadows += 1
 
             if stall["name"] == "charging_stall":
-                positions = create_positions(capacities["charging_stall_mobile"])
-                new_stall.positions = positions
+                capacity = capacities["charging_stall_mobile"]
+                positions = [capacity]
+
+                for i in range(capacity):
+                   positions.append([])
+
+                new_stall.set_positions(positions)
 
             if stall["type"] == "attraction":
                 attraction_data = source.ATTRACTIONS["attractions"][stall["name"]]
-                new_stall.attraction = attractions.Attraction(env, resource, stall["cz_name"], attraction_data, 0.5, 10, time_converter)
+                new_stall.set_attraction(attractions.Attraction(env, resource, stall["cz_name"], attraction_data, 0.5, 10, time_converter))
                 
 
             objected_stall.append(new_stall)
@@ -306,8 +306,6 @@ def create_toitois(env, stall, capacities, location):
                             location,
                             simpy.Resource(env, capacity=1),
                             i,
-                            stall["x"],
-                            stall["y"],
                             None,
                             stall["canvas_ids"]))
         else:
@@ -319,8 +317,6 @@ def create_toitois(env, stall, capacities, location):
                             location,
                             simpy.Resource(env, capacity=1),
                             i,
-                            stall["x"],
-                            stall["y"],
                             None,
                             stall["canvas_ids"]))
             
@@ -466,10 +462,10 @@ def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
         canvas.itemconfig(stall.get_img_id(), image=img_color)
 
         if zone == "FESTIVAL_AREA":
-            festival.set_possible_actions_situation(inside=True)
+            festival.set_possible_actions_situation(inside=2)
 
         else:
-            festival.set_possible_actions_situation(outside=True)
+            festival.set_possible_actions_situation(outside=2)
 
         message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě otevřel."
         log_message(message)
@@ -479,19 +475,13 @@ def set_stall_schedule(stall, controller, canvas, gray_images, colored_images):
         canvas.itemconfig(stall.get_img_id(), image=gray_images[stall.get_name()])
 
         if zone == "FESTIVAL_AREA":
-            festival.set_possible_actions_situation(inside=False)
+            festival.set_possible_actions_situation(inside=1)
             
         else:
-            festival.set_possible_actions_situation(outside=False)
+            festival.set_possible_actions_situation(outside=1)
 
         message = f"ČAS {time_converter.get_real_time()}: Stánek {stall.get_cz_name()} v zóně {zone_cz} právě zavřel."
         log_message(message)
 
-def create_positions(capacity):
     
-    area = [capacity]
-
-    for i in range(capacity):
-        area.append([])
-
-    return area
+    

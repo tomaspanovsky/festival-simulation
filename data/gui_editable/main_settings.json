@@ -1,5 +1,5 @@
 {
-    "num_visitors": 100,
-    "num_days": 2,
+    "num_visitors": 500,
+    "num_days": 1,
     "simulation_start_time": "08:00"
 }

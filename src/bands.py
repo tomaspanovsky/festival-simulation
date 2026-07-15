@@ -169,9 +169,11 @@ def create_merch(line_up, merch):
     number_of_merch = len(bands_merch_type)
     number_of_merch_factor = number_of_merch // 3
     number_of_merch = [number_of_merch_factor, number_of_merch_factor * 2, number_of_merch]
-    
-    merch = {}
-    merch["festival_merch"] = festival_merch
+
+    for merch in festival_merch.values():
+        merch["sold"] = 0
+        merch["profit"] = 0
+        
     bands_merch = {}
 
     for bands_day in line_up:
@@ -185,8 +187,14 @@ def create_merch(line_up, merch):
 
             bands_merch[band["band_name"]] = band_merch
     
+    for band, band_merch in bands_merch.items():
+        for merch in band_merch.values():
+            merch["sold"] = 0
+            merch["profit"] = 0
+    
+    merch = {}
+    merch["festival_merch"] = festival_merch
     merch["bands_merch"] = bands_merch
-    merch["sold"] = [{}]
 
     return merch
 

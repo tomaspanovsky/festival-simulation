@@ -845,8 +845,8 @@
                     "id": 34,
                     "name": "meadow_for_living",
                     "cz_name": "louka na stanování",
-                    "x": 385,
-                    "y": 776,
+                    "x": 379,
+                    "y": 767.0,
                     "type": "tent_area",
                     "canvas_ids": [
                         135,
@@ -2410,8 +2410,8 @@
                 {
                     "object": "Louka na stanování",
                     "id": 34,
-                    "x": 385,
-                    "y": 776,
+                    "x": 379,
+                    "y": 767.0,
                     "x1": 277,
                     "y1": 695,
                     "x2": 477,
