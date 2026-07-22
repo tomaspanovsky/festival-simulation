@@ -57,9 +57,6 @@ def save_actual_state(controller):
     global simulation_states
 
     state = controller.get_simulation_state()
-    del state["zones_stats"]
-    del state["stalls_stats"]
-    del state["standing_by_stage_stats"]
     simulation_states.append(state)
 
 def process_results(controller):

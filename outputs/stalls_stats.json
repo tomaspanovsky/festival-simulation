@@ -1,1 +1,699 @@
-null
+{
+    "SPAWN_ZONE": {},
+    "ENTRANCE_ZONE": {
+        "atm_23": {
+            "average_queue_length": 2.55,
+            "maximum_queue_length": 8,
+            "maximum_visitors_waiting_time_in_queue": 21,
+            "average_visitors_waiting_time_in_queue": 4.94,
+            "total_number_of_served_visitors": 40
+        },
+        "beer_stall_15": {
+            "average_queue_length": 1.96,
+            "maximum_queue_length": 5,
+            "maximum_visitors_waiting_time_in_queue": 4,
+            "average_visitors_waiting_time_in_queue": 1.61,
+            "total_number_of_served_visitors": 148
+        },
+        "beer_stall_16": {
+            "average_queue_length": 2.0,
+            "maximum_queue_length": 4,
+            "maximum_visitors_waiting_time_in_queue": 4,
+            "average_visitors_waiting_time_in_queue": 1.74,
+            "total_number_of_served_visitors": 72
+        },
+        "beer_stall_28": {
+            "average_queue_length": 1.36,
+            "maximum_queue_length": 3,
+            "maximum_visitors_waiting_time_in_queue": 2,
+            "average_visitors_waiting_time_in_queue": 1.36,
+            "total_number_of_served_visitors": 32
+        },
+        "burger_stall_9": {
+            "average_queue_length": 1.0,
+            "maximum_queue_length": 1,
+            "maximum_visitors_waiting_time_in_queue": 4,
+            "average_visitors_waiting_time_in_queue": 4.0,
+            "total_number_of_served_visitors": 19
+        },
+        "cup_return_33": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "grill_stall_11": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 14
+        },
+        "gyros_stall_10": {
+            "average_queue_length": 34.92,
+            "maximum_queue_length": 85,
+            "maximum_visitors_waiting_time_in_queue": 261,
+            "average_visitors_waiting_time_in_queue": 64.0,
+            "total_number_of_served_visitors": 13
+        },
+        "handwashing_station_18": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 247
+        },
+        "handwashing_station_19": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 137
+        },
+        "langos_stall_12": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 7
+        },
+        "nonalcohol_stall_13": {
+            "average_queue_length": 1.67,
+            "maximum_queue_length": 5,
+            "maximum_visitors_waiting_time_in_queue": 3,
+            "average_visitors_waiting_time_in_queue": 1.45,
+            "total_number_of_served_visitors": 128
+        },
+        "nonalcohol_stall_14": {
+            "average_queue_length": 1.54,
+            "maximum_queue_length": 3,
+            "maximum_visitors_waiting_time_in_queue": 4,
+            "average_visitors_waiting_time_in_queue": 1.67,
+            "total_number_of_served_visitors": 63
+        },
+        "nonalcohol_stall_29": {
+            "average_queue_length": 1.4,
+            "maximum_queue_length": 2,
+            "maximum_visitors_waiting_time_in_queue": 3,
+            "average_visitors_waiting_time_in_queue": 1.75,
+            "total_number_of_served_visitors": 19
+        },
+        "pizza_stall_8": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "tables_20": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 430
+        },
+        "tables_21": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 446
+        },
+        "tables_22": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 421
+        },
+        "ticket_booth_4": {
+            "average_queue_length": 4.97,
+            "maximum_queue_length": 17,
+            "maximum_visitors_waiting_time_in_queue": 6,
+            "average_visitors_waiting_time_in_queue": 2.21,
+            "total_number_of_served_visitors": 29
+        },
+        "ticket_booth_5": {
+            "average_queue_length": 4.12,
+            "maximum_queue_length": 9,
+            "maximum_visitors_waiting_time_in_queue": 2,
+            "average_visitors_waiting_time_in_queue": 1.29,
+            "total_number_of_served_visitors": 38
+        },
+        "ticket_booth_6": {
+            "average_queue_length": 4.08,
+            "maximum_queue_length": 12,
+            "maximum_visitors_waiting_time_in_queue": 4,
+            "average_visitors_waiting_time_in_queue": 1.58,
+            "total_number_of_served_visitors": 17
+        },
+        "ticket_booth_7": {
+            "average_queue_length": 2.64,
+            "maximum_queue_length": 5,
+            "maximum_visitors_waiting_time_in_queue": 5,
+            "average_visitors_waiting_time_in_queue": 2.25,
+            "total_number_of_served_visitors": 11
+        },
+        "ticket_booth_30": {
+            "average_queue_length": 1.0,
+            "maximum_queue_length": 1,
+            "maximum_visitors_waiting_time_in_queue": 2,
+            "average_visitors_waiting_time_in_queue": 2.0,
+            "total_number_of_served_visitors": 2
+        },
+        "ticket_booth_31": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "toitoi_17": {
+            "average_queue_length": 22.97,
+            "maximum_queue_length": 87,
+            "maximum_visitors_waiting_time_in_queue": 35,
+            "average_visitors_waiting_time_in_queue": 5.62,
+            "total_number_of_served_visitors": 314
+        }
+    },
+    "FESTIVAL_AREA": {
+        "atm_65": {
+            "average_queue_length": 1.23,
+            "maximum_queue_length": 2,
+            "maximum_visitors_waiting_time_in_queue": 10,
+            "average_visitors_waiting_time_in_queue": 3.16,
+            "total_number_of_served_visitors": 40
+        },
+        "beer_stall_77": {
+            "average_queue_length": 1.0,
+            "maximum_queue_length": 1,
+            "maximum_visitors_waiting_time_in_queue": 1,
+            "average_visitors_waiting_time_in_queue": 1.0,
+            "total_number_of_served_visitors": 73
+        },
+        "beer_stall_78": {
+            "average_queue_length": 1.0,
+            "maximum_queue_length": 1,
+            "maximum_visitors_waiting_time_in_queue": 1,
+            "average_visitors_waiting_time_in_queue": 1.0,
+            "total_number_of_served_visitors": 13
+        },
+        "beer_stall_99": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "belgian_fries_stall_72": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "belgian_fries_stall_98": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "burger_stall_69": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "charging_stall_94": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 52
+        },
+        "cocktail_stall_81": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 12
+        },
+        "cocktail_stall_82": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "cup_return_32": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "entrance_24": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 41
+        },
+        "entrance_25": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 22
+        },
+        "grill_stall_71": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "gyros_stall_70": {
+            "average_queue_length": 3.16,
+            "maximum_queue_length": 8,
+            "maximum_visitors_waiting_time_in_queue": 24,
+            "average_visitors_waiting_time_in_queue": 7.13,
+            "total_number_of_served_visitors": 18
+        },
+        "handwashing_station_85": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 108
+        },
+        "handwashing_station_86": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 25
+        },
+        "handwashing_station_87": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 2
+        },
+        "handwashing_station_88": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "langos_stall_73": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "merch_stall_92": {
+            "average_queue_length": 13.03,
+            "maximum_queue_length": 29,
+            "maximum_visitors_waiting_time_in_queue": 15,
+            "average_visitors_waiting_time_in_queue": 4.69,
+            "total_number_of_served_visitors": 163
+        },
+        "merch_stall_95": {
+            "average_queue_length": 12.28,
+            "maximum_queue_length": 28,
+            "maximum_visitors_waiting_time_in_queue": 15,
+            "average_visitors_waiting_time_in_queue": 5.29,
+            "total_number_of_served_visitors": 132
+        },
+        "nonalcohol_stall_75": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 50
+        },
+        "nonalcohol_stall_76": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 9
+        },
+        "nonalcohol_stall_101": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 3
+        },
+        "pizza_stall_68": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "redbull_stall_79": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 62
+        },
+        "redbull_stall_80": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 19
+        },
+        "signing_stall_93": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 63
+        },
+        "stage_26": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 8
+        },
+        "standing_at_stage_27": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "sweet_stall_74": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "tables_89": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 104
+        },
+        "tables_90": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 108
+        },
+        "tables_91": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 101
+        },
+        "tables_96": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 54
+        },
+        "toitoi_83": {
+            "average_queue_length": 1.0,
+            "maximum_queue_length": 1,
+            "maximum_visitors_waiting_time_in_queue": 21,
+            "average_visitors_waiting_time_in_queue": 13.6,
+            "total_number_of_served_visitors": 99
+        },
+        "toitoi_84": {
+            "average_queue_length": 1.16,
+            "maximum_queue_length": 2,
+            "maximum_visitors_waiting_time_in_queue": 23,
+            "average_visitors_waiting_time_in_queue": 9.11,
+            "total_number_of_served_visitors": 92
+        }
+    },
+    "CHILL_ZONE": {
+        "beer_stall_51": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 4
+        },
+        "charging_stall_56": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 2
+        },
+        "chill_stall_48": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "chill_stall_57": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "cigaret_stall_47": {
+            "average_queue_length": 1.14,
+            "maximum_queue_length": 2,
+            "maximum_visitors_waiting_time_in_queue": 2,
+            "average_visitors_waiting_time_in_queue": 1.33,
+            "total_number_of_served_visitors": 37
+        },
+        "cocktail_stall_50": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 2
+        },
+        "handwashing_station_54": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 6
+        },
+        "handwashing_station_55": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 1
+        },
+        "nonalcohol_stall_49": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 4
+        },
+        "redbull_stall_52": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 6
+        },
+        "toitoi_53": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 7
+        },
+        "water_pipe_stall_46": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 41
+        },
+        "water_pipe_stall_58": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 48
+        }
+    },
+    "TENT_AREA": {
+        "beer_stall_43": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 5
+        },
+        "charging_stall_38": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "handwashing_station_36": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 272
+        },
+        "handwashing_station_37": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 140
+        },
+        "meadow_for_living_34": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "nonalcohol_stall_44": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 8
+        },
+        "redbull_stall_45": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 6
+        },
+        "showers_39": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 5
+        },
+        "showers_40": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 2
+        },
+        "showers_41": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "showers_42": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 0
+        },
+        "toitoi_35": {
+            "average_queue_length": 1.09,
+            "maximum_queue_length": 2,
+            "maximum_visitors_waiting_time_in_queue": 3,
+            "average_visitors_waiting_time_in_queue": 1.57,
+            "total_number_of_served_visitors": 43
+        }
+    },
+    "FUN_ZONE": {
+        "atm_66": {
+            "average_queue_length": 2.67,
+            "maximum_queue_length": 6,
+            "maximum_visitors_waiting_time_in_queue": 19,
+            "average_visitors_waiting_time_in_queue": 5.77,
+            "total_number_of_served_visitors": 16
+        },
+        "beer_stall_67": {
+            "average_queue_length": 3.25,
+            "maximum_queue_length": 8,
+            "maximum_visitors_waiting_time_in_queue": 7,
+            "average_visitors_waiting_time_in_queue": 2.33,
+            "total_number_of_served_visitors": 106
+        },
+        "bench_61": {
+            "average_queue_length": 3.67,
+            "maximum_queue_length": 5,
+            "maximum_visitors_waiting_time_in_queue": 2,
+            "average_visitors_waiting_time_in_queue": 1.5,
+            "total_number_of_served_visitors": 241
+        },
+        "bungee_jumping_59": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 10
+        },
+        "carousel_63": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 262
+        },
+        "cocktail_stall_104": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 15
+        },
+        "hammer_62": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 184
+        },
+        "jumping_castle_64": {
+            "average_queue_length": 1.93,
+            "maximum_queue_length": 5,
+            "maximum_visitors_waiting_time_in_queue": 10,
+            "average_visitors_waiting_time_in_queue": 6.5,
+            "total_number_of_served_visitors": 103
+        },
+        "nonalcohol_stall_103": {
+            "average_queue_length": 1.75,
+            "maximum_queue_length": 4,
+            "maximum_visitors_waiting_time_in_queue": 3,
+            "average_visitors_waiting_time_in_queue": 1.67,
+            "total_number_of_served_visitors": 86
+        },
+        "rollercoaster_60": {
+            "average_queue_length": 0,
+            "maximum_queue_length": 0,
+            "maximum_visitors_waiting_time_in_queue": 0,
+            "average_visitors_waiting_time_in_queue": 0,
+            "total_number_of_served_visitors": 252
+        }
+    }
+}

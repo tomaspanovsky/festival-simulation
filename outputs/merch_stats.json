@@ -1,1 +1,538 @@
-{}
+{
+    "festival_merch": {
+        "Festivalové tričko:": {
+            "price": 550,
+            "quantity": 431,
+            "sold": 69,
+            "profit": 37950
+        },
+        "Festivalová mikina:": {
+            "price": 1300,
+            "quantity": 151,
+            "sold": 49,
+            "profit": 63700
+        },
+        "Festivalová mikina s kapucí:": {
+            "price": 1500,
+            "quantity": 151,
+            "sold": 49,
+            "profit": 73500
+        },
+        "Sada všech kelímků:": {
+            "price": 250,
+            "quantity": 342,
+            "sold": 58,
+            "profit": 14500
+        },
+        "Festivalový gumový náramek:": {
+            "price": 100,
+            "quantity": 536,
+            "sold": 64,
+            "profit": 6400
+        },
+        "Festivalová plátěná taška:": {
+            "price": 250,
+            "quantity": 224,
+            "sold": 76,
+            "profit": 19000
+        },
+        "Festivalová vlajka:": {
+            "price": 400,
+            "quantity": 44,
+            "sold": 76,
+            "profit": 30400
+        },
+        "Festivalový plakát:": {
+            "price": 200,
+            "quantity": 199,
+            "sold": 51,
+            "profit": 10200
+        },
+        "Festivalový program:": {
+            "price": 150,
+            "quantity": 439,
+            "sold": 61,
+            "profit": 9150
+        },
+        "Festivalová čepice:": {
+            "price": 350,
+            "quantity": 135,
+            "sold": 65,
+            "profit": 22750
+        },
+        "Festivalová kšiltovka:": {
+            "price": 450,
+            "quantity": 124,
+            "sold": 76,
+            "profit": 34200
+        },
+        "Festivalová bunda:": {
+            "price": 1400,
+            "quantity": 17,
+            "sold": 63,
+            "profit": 88200
+        },
+        "Festivalová láhev na vodu:": {
+            "price": 300,
+            "quantity": 198,
+            "sold": 52,
+            "profit": 15600
+        },
+        "Festivalový přívěsek:": {
+            "price": 150,
+            "quantity": 233,
+            "sold": 67,
+            "profit": 10050
+        }
+    },
+    "bands_merch": {
+        "Gate Crasher": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            }
+        },
+        "Ine Kafe": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            }
+        },
+        "Doga": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            }
+        },
+        "Jelen": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            }
+        },
+        "Divokej Bill": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            }
+        },
+        "Kabát": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            }
+        },
+        "Sabaton": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            },
+            "Taška:": {
+                "price": 200,
+                "quantity": 116,
+                "sold": 34,
+                "profit": 6800
+            },
+            "Klíčenka:": {
+                "price": 120,
+                "quantity": 148,
+                "sold": 52,
+                "profit": 6240
+            },
+            "Nášivka:": {
+                "price": 100,
+                "quantity": 203,
+                "sold": 47,
+                "profit": 4700
+            },
+            "Odznak:": {
+                "price": 80,
+                "quantity": 251,
+                "sold": 49,
+                "profit": 3920
+            },
+            "Podepsaný setlist:": {
+                "price": 500,
+                "quantity": 0,
+                "sold": 30,
+                "profit": 15000
+            },
+            "Trsátko:": {
+                "price": 60,
+                "quantity": 264,
+                "sold": 36,
+                "profit": 2160
+            }
+        },
+        "AC/DC": {
+            "Tričko:": {
+                "price": 500,
+                "quantity": 222,
+                "sold": 78,
+                "profit": 39000
+            },
+            "Mikina s kapucí:": {
+                "price": 1200,
+                "quantity": 61,
+                "sold": 59,
+                "profit": 70800
+            },
+            "Mikina bez kapuce:": {
+                "price": 1000,
+                "quantity": 44,
+                "sold": 76,
+                "profit": 76000
+            },
+            "CD:": {
+                "price": 250,
+                "quantity": 60,
+                "sold": 90,
+                "profit": 22500
+            },
+            "Plakát:": {
+                "price": 150,
+                "quantity": 129,
+                "sold": 71,
+                "profit": 10650
+            },
+            "Kšiltovka:": {
+                "price": 250,
+                "quantity": 74,
+                "sold": 76,
+                "profit": 19000
+            },
+            "Čepice:": {
+                "price": 250,
+                "quantity": 22,
+                "sold": 98,
+                "profit": 24500
+            },
+            "Vinyl:": {
+                "price": 700,
+                "quantity": 5,
+                "sold": 75,
+                "profit": 52500
+            },
+            "Taška:": {
+                "price": 200,
+                "quantity": 116,
+                "sold": 34,
+                "profit": 6800
+            },
+            "Klíčenka:": {
+                "price": 120,
+                "quantity": 148,
+                "sold": 52,
+                "profit": 6240
+            },
+            "Nášivka:": {
+                "price": 100,
+                "quantity": 203,
+                "sold": 47,
+                "profit": 4700
+            },
+            "Odznak:": {
+                "price": 80,
+                "quantity": 251,
+                "sold": 49,
+                "profit": 3920
+            },
+            "Podepsaný setlist:": {
+                "price": 500,
+                "quantity": 0,
+                "sold": 30,
+                "profit": 15000
+            },
+            "Trsátko:": {
+                "price": 60,
+                "quantity": 264,
+                "sold": 36,
+                "profit": 2160
+            }
+        }
+    }
+}

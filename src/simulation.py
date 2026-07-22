@@ -313,24 +313,20 @@ class Group:
                 if (not member.can_afford(festival.get_price("on_site_price"), self.num_of_children) and not member.state["pre_sale_ticket"]) or (not member.can_afford(festival.get_price("camping_area_price"), self.num_of_children) and not member.state["tent_area_ticket"] and member.accommodition):
                 
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá dost peněz, aby si mohl koupit vstupenku na festival pro sebe a své děti a musí si tedy jít vybrat peníze do bankomatu."
-                    
                     logs.log_visitor(member, message)
-                    member.set_visitor_not_busy()
+
                     member.set_state_low_money()
-                    return
-                
+
                 else:
                     yield self.env.process(member.bracelet_exchange(controller, booth, travel_time, child_asistance, self))
 
             elif (not member.can_afford(festival.get_price("on_site_price")) and not member.state["pre_sale_ticket"]) or (not member.can_afford(festival.get_price("camping_area_price")) and not member.state["tent_area_ticket"] and member.accommodition):
                 
                 message = f"ČAS {time_converter.get_real_time()}: Návštěvník {member.name} {member.surname} nemá koupený lístek z předprodeje, nebo nemá koupení lístek do stanového městečka, a nemá dost peněz, musí si tedy jít vybrat peníze do bankomatu."
-                
                 logs.log_visitor(member, message)
-                member.set_visitor_not_busy()
+
                 member.set_state_low_money()
-                return
-            
+
             else:
                 yield self.env.process(member.bracelet_exchange(controller, booth, travel_time))
 
@@ -3180,10 +3176,9 @@ class Visitor:
             reimaining_time = actual_band["end_playing_time"] - self.env.now 
 
             if self.state["location"] != source.Locations.STAGE_STANDING:
-                self.state["location"] = source.Locations.STAGE_STANDING
-
-                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k podiu na koncert kapely {actual_band["band_name"]}."
                 
+
+                message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} jde k podiu na koncert kapely {actual_band["band_name"]}."                
                 logs.log_visitor(self, message)
                 
                 time_to_get_by_stage = travel_time
@@ -3192,14 +3187,16 @@ class Visitor:
                     message = f"ČAS {time_converter.get_real_time()}: Návštěvník {self.name} {self.surname} už bohužel koncert kapely {actual_band["band_name"]} nestíhá a tak jde dělat něco jiného."
                     
                     logs.log_visitor(self, message)
-                    yield self.env.timeout(1)
                     return
                 
                 else:
                     self.env.timeout(travel_time)
+                    self.state["location"] = source.Locations.STAGE_STANDING
                 
             else:
-
+                if not "location_stage" in self.state:
+                    breakpoint()
+                
                 resource = self.state["location_stage"]
                 position = self.state["location_stage_position"]
                 time_to_start = actual_band["start_playing_time"] - self.env.now

@@ -1,1 +1,50 @@
-null
+{
+    "ENTRANCE_ZONE": {
+        "average_number_of_visitors_in_zone": 158.18,
+        "maximum_number_of_visitors_in_zone": 296,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 2: 06:45"
+        ]
+    },
+    "TENT_AREA": {
+        "average_number_of_visitors_in_zone": 118.04,
+        "maximum_number_of_visitors_in_zone": 315,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 1: 23:30",
+            "Day 1: 23:31"
+        ]
+    },
+    "FESTIVAL_AREA": {
+        "average_number_of_visitors_in_zone": 107.89,
+        "maximum_number_of_visitors_in_zone": 259,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 1: 11:08",
+            "Day 1: 12:40",
+            "Day 1: 12:41"
+        ]
+    },
+    "CHILL_ZONE": {
+        "average_number_of_visitors_in_zone": 7.94,
+        "maximum_number_of_visitors_in_zone": 57,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 1: 09:57",
+            "Day 1: 10:00",
+            "Day 1: 10:18",
+            "Day 1: 10:19"
+        ]
+    },
+    "FUN_ZONE": {
+        "average_number_of_visitors_in_zone": 76.25,
+        "maximum_number_of_visitors_in_zone": 209,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 1: 09:47"
+        ]
+    },
+    "SPAWN_ZONE": {
+        "average_number_of_visitors_in_zone": 4.11,
+        "maximum_number_of_visitors_in_zone": 34,
+        "times_with_maximum_number_of_visitors_in_zone": [
+            "Day 1: 08:19"
+        ]
+    }
+}
